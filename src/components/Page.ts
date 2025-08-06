@@ -1,73 +1,85 @@
 // Page.ts
 
-import { EventEmitter } from './base/events';
-import { BasketModal } from './BasketModal';
 import { Api } from './base/api';
 import { ensureElement, cloneTemplate } from '../utils/utils';
-import { API_URL } from '../utils/constants';
-import { CardModal } from './CardModal';
-import { CDN_URL, categoryClasses } from '../utils/constants';
-import { Product } from '../types/index';
+import { API_URL, CDN_URL, categoryClasses } from '../utils/constants';
+import { CardView } from './CardView';
+import { IProduct } from '../types/index';
+import { EventEmitter } from './base/events';
 
-// Создаем экземпляр EventEmitter для обработки событий страницы
-const pageEventsEmitter = new EventEmitter();
+// Класс рендеринга отдельного продукта
+export class ProductRenderer {
+  constructor(private _element: HTMLElement) {}
 
-// Инициализируем обработку открытия корзины
-pageEventsEmitter.on('open-basket', () => BasketModal.getInstance().showBasket());
+  // Рендерит название продукта
+  render(product: IProduct, fullView: boolean = false) {
+    this.renderTitle(product.title);
+    this.renderCategory(product.category);
+    this.renderImage(product.image);
+    this.renderPrice(product.price);
+    if (fullView) this.renderDescription(product.description || '');
+  }
 
-// Функция загрузки и рендеринга продуктов
-export async function loadAndRenderProducts() {
-  try {
-    const api = new Api(API_URL);
-    const { items } = await api.get('/product') as { items: Product[] };
-    
-    if (!items) return;
+  // Устанавливает заголовок продукта
+  renderTitle(title: string) {
+    const el = ensureElement('.card__title', this._element);
+    el && (el.textContent = title);
+  }
 
-    const galleryContainer = ensureElement('.gallery', document.body)!;
-    const cardCatalogTemplate = ensureElement('#card-catalog', document.body)! as HTMLTemplateElement;
-
-    for (const product of items) {
-      const clonedCard = cloneTemplate(cardCatalogTemplate);
-      
-      // Получаем элементы карточки и наполняем их информацией
-      const [
-        titleElement,
-        categoryElement,
-        imageElement,
-        priceElement
-      ] = ['.card__title', '.card__category', '.card__image', '.card__price'].map(selector =>
-        ensureElement(selector, clonedCard)!
-      );
-
-      titleElement.textContent = product.title;
-      categoryElement.textContent = product.category;
-      (imageElement as HTMLImageElement).src = `${CDN_URL}/${product.image}`; // Присваиваем изображение
-
-      // Отображение цены с дополнительной проверкой
-      const priceText = (
-        typeof product.price === 'number' && isFinite(product.price)
-          ? `${product.price} синапсов`
-          : 'Цена неизвестна'
-      );
-      priceElement.textContent = priceText;
-
-      // Добавляем стили категории, если существуют
-      const styleClass = categoryClasses[product.category.toLowerCase()];
-      if (styleClass) categoryElement.classList.add(styleClass);
-
-      // Настройка события клика на карточку
-      clonedCard.addEventListener('click', () => pageEventsEmitter.emit('productClick', product));
-
-      // Добавляем карточку в галерею
-      galleryContainer.appendChild(clonedCard);
-    }
-  } catch (err) {
-    console.error(`Ошибка загрузки товаров: ${err.message}`);
+  // Устанавливает категорию продукта
+  renderCategory(category: string) {
+  const categoryElement = ensureElement('.card__category', this._element);
+  if (categoryElement) {
+    categoryElement.textContent = category;
+    const oldClass = [...categoryElement.classList].find(className => className.includes('card__category_')); // находим старый класс категории
+    const newClass = categoryClasses[category.trim().toLocaleLowerCase()];
+    if (oldClass) categoryElement.classList.replace(oldClass, newClass ?? '');
   }
 }
 
-// Назначаем событие клика на корзину
-ensureElement('.header__basket')!.addEventListener('click', () => pageEventsEmitter.emit('open-basket'));
+  // Устанавливает цену продукта
+  renderPrice(price: number | undefined) {
+    const el = ensureElement('.card__price', this._element);
+    el && (el.textContent = typeof price === 'number' ? `${price} синапсов` : 'Бесплатно');
+  }
 
-// Обрабатываем клики по продуктам и показываем карточку товара
-pageEventsEmitter.on('productClick', (product: Product) => CardModal.showProductCard(product));
+  // Устанавливает описание продукта
+  renderDescription(description: string) {
+    const el = ensureElement('.card__text', this._element);
+    el && (el.textContent = description);
+  }
+
+  // Устанавливает изображение продукта
+  renderImage(imagePath: string) {
+    const imgEl = ensureElement('.card__image', this._element) as HTMLImageElement | null;
+    imgEl && (imgEl.src = `${CDN_URL}/${imagePath}`);
+  }
+}
+
+// Класс загрузки каталога товаров
+class CatalogProductsLoader {
+  constructor(private events: EventEmitter) {}
+
+  // Метод асинхронной загрузки списка товаров
+  async load(url: string): Promise<void> {
+    const api = new Api(API_URL);
+    const response = await api.get(url) as { items?: IProduct[] };
+    const products = response.items || [];
+
+    const gallery = ensureElement('.gallery');
+    const template = ensureElement('#card-catalog')! as HTMLTemplateElement;
+
+    for (const product of products) {
+      const element = cloneTemplate(template);
+      const renderer = new ProductRenderer(element);
+      renderer.render(product);
+      element.addEventListener('click', () => CardView.showProductCard(product, this.events));
+      gallery?.appendChild(element);
+    }
+  }
+}
+
+// Экспортированная функция загрузки каталога товаров
+export async function loadCatalog(events: EventEmitter): Promise<void> {
+  return new CatalogProductsLoader(events).load('/product');
+}

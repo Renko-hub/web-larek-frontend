@@ -1,113 +1,63 @@
 // BaseModal.ts
 
-import { ensureElement, setElementData, getElementData, bem } from '../utils/utils';
-import { EventEmitter } from './base/events';
+import { ensureElement } from '../utils/utils';
 
-// Интерфейс базового модального окна
-interface IBaseModal {
-  open(): void;
-  close(): void;
-  replaceContent(newContent: Node): void;
-  on(eventName: string, callback: (event: object) => void): void;
-  emit(eventName: string, data?: any): void;
-}
-
-// Базовая реализация модальных окон
-export class BaseModal implements IBaseModal {
+// Базовый класс модального окна
+export class BaseModal {
   protected modalElement: HTMLElement | null = null;
   protected content: HTMLElement | null = null;
 
-  protected readonly emitter = new EventEmitter();
-
-  // Конструктор класса Modal
-  constructor(protected readonly containerId: string) {
+  // Конструктор класса с передачей контейнера модалки
+  constructor(containerId: string) {
     this.modalElement = ensureElement(containerId, document.body);
     this.content = ensureElement('.modal__content', this.modalElement);
     this.initializeListeners();
   }
 
-  // Возвращает элемент, содержащий контент модального окна
-  public getContentContainer(): HTMLElement | null {
-    return this.content;
+  // Публичный метод открывающий модальное окно
+  open(): void {
+    this.modalElement && this.modalElement.classList.add('modal_active');
   }
 
-  // Показывает модальное окно
-  public open(): void {
-    if (!this.modalElement || !this.content) return;
-    this.modalElement.classList.add('modal_active');
+  // Публичный метод закрывающий модальное окно
+  close(): void {
+    this.modalElement && this.modalElement.classList.remove('modal_active');
+    this.uninitializeListeners();
   }
 
- // Закрывает модальное окно
-  public close(): void {
-    if (!this.modalElement || !this.content) return;
-    this.modalElement.classList.remove('modal_active');
+  // Метод установки нового содержимого внутри модального окна
+  setContent(newContent: Node): void {
+    this.content && (this.content.innerHTML = '', this.content.appendChild(newContent));
   }
 
-  // Меняет содержимое модального окна новым узлом DOM
-  public replaceContent(newContent: Node): void {
-    if (!this.content) return;
-    this.content.innerHTML = ''; // Очищаем предыдущий контент
-    this.content.appendChild(newContent); // Устанавливаем новый контент
+  // Закрывает модалку при нажатии клавиши Escape
+  protected handleKeyDown(evt: KeyboardEvent): void {
+    evt.key === 'Escape' && this.close();
   }
 
-  // Регистрация слушателей событий
-
-  public on(eventName: string, callback: (event: object) => void): void {
-    this.emitter.on(eventName, callback);
-  }
-
-  // Эмитирует событие
-  public emit(eventName: string, data?: any): void {
-    this.emitter.emit(eventName, data);
-  }
-
-  // Обработка нажатия клавиши Escape
-  private handleKeyDown(evt: KeyboardEvent): void {
-    if (evt.key === 'Escape') {
+  // Закрывает модалку при клике вне области содержимого
+  protected handleOutsideClick(evt: MouseEvent): void {
+    const target = evt.target as Element;
+    if (!target || !this.content?.contains(target)) {
       this.close();
     }
   }
 
-  // Обработка кликов вне области модального окна
-  private handleOutsideClick(evt: MouseEvent): void {
-    const targetNode = evt.target as Node;
-    if (
-      !(targetNode instanceof Element) ||
-      !this.content?.contains(targetNode)
-    ) {
-      this.close();
-    }
-  }
-
-  // Инициализация слушателей событий
-  protected initializeListeners(): void {
+  // Приватный метод инициализации слушателей событий
+  private initializeListeners(): void {
     document.addEventListener('keydown', this.handleKeyDown.bind(this));
     document.body.addEventListener('click', this.handleOutsideClick.bind(this), true);
 
     const closeBtn = ensureElement('.modal__close', this.modalElement);
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.close());
-    }
+    closeBtn && closeBtn.addEventListener('click', () => this.close());
   }
 
-  // Записывает данные элемента модального окна
-  protected setModalData(data: Record<string, unknown>): void {
-    if (this.modalElement) {
-      setElementData(this.modalElement, data);
-    }
-  }
+  // Приватный метод удаления слушателей событий
+  private uninitializeListeners(): void {
+    document.removeEventListener('keydown', this.handleKeyDown.bind(this));
+    document.body.removeEventListener('click', this.handleOutsideClick.bind(this), true);
 
-  // Чтение данных элемента модального окна
-  protected getModalData(schema: Record<string, Function>): Record<string, unknown> {
-    if (this.modalElement) {
-      return getElementData(this.modalElement, schema);
-    }
-    return {};
-  }
-
-  // Генерация BEM-класса
-  protected generateBemClass(block: string, element?: string, modifier?: string): string {
-    const bemResult = bem(block, element, modifier);
-    return bemResult.class;
+    const closeBtn = ensureElement('.modal__close', this.modalElement);
+    closeBtn && closeBtn.removeEventListener('click', () => this.close());
   }
 }

@@ -1,71 +1,75 @@
 // Components.ts
 
-import { validateForm, validateContactForm } from './Forms';
+import { validateForm } from './Forms';
+import { cloneTemplate, ensureElement } from '../utils/utils';
+import { IProduct } from '../types/index';
 
-// Возможные состояния активности кнопки
+// Флаги кнопок
 enum ButtonActionType {
-  Active = 'active',     // Активное состояние
-  Inactive = 'inactive', // Неактивное состояние
+  Active = 'active',
+  Inactive = 'inactive'
 }
 
-// Переключение активной кнопки
-export function toggleActiveButton(
-  activeBtn: HTMLButtonElement,    // Текущая активная кнопка
-  inactiveBtn: HTMLButtonElement,  // Другая неактивная кнопка
-  action: ButtonActionType = ButtonActionType.Active // Действие по умолчанию активация
-): void {
-  switch (action) {
-    case ButtonActionType.Active:
-      activeBtn.classList.add('button_alt-active'); // Включаем класс активности
-      break;
-    case ButtonActionType.Inactive:
-      activeBtn.classList.remove('button_alt-active'); // Убираем класс активности
-      break;
-  }
+// Создание карточки продукта
+export function createProductCard(item: IProduct, onRemoveClick: () => void): HTMLLIElement {
+  const card = cloneTemplate('#card-basket')! as HTMLLIElement;
 
-  inactiveBtn.classList.toggle('button_alt-active', false); // Дезактивируем вторую кнопку
+  const priceDisplay = (item.price > 0)
+    ? `${item.price * (item.quantity || 1)} синапсов`
+    : 'Бесплатно';
+
+  ensureElement('.card__title', card).textContent = item.title;
+  ensureElement('.card__price', card).textContent = priceDisplay;
+
+  (ensureElement('.basket__item-delete', card) as HTMLButtonElement).onclick = onRemoveClick;
+
+  return card;
 }
 
-// Обработчик изменения поля адреса (форма заказа)
-export function handleAddressInput(event: Event, form: HTMLFormElement): void {
-  event.preventDefault(); // Предотвращаем стандартное поведение браузера
-  validateForm(form);     // Валидация формы
+// Настройка слушателей на форме заказа
+export const setupListeners = (formData: any) => {
+  formData.fields.address.addEventListener('input', (event: InputEvent) =>
+    handleInputChange(event, validateForm, formData.form)
+  );
+
+  formData.buttons.cardButton.addEventListener('click', () =>
+    handlePaymentClick(formData.buttons.cardButton, formData.buttons.cashButton, formData.form)
+  );
+
+  formData.buttons.cashButton.addEventListener('click', () =>
+    handlePaymentClick(formData.buttons.cashButton, formData.buttons.cardButton, formData.form)
+  );
+};
+
+// Обработка кликов по способам оплаты
+function handlePaymentClick(activeBtn: HTMLButtonElement, inactiveBtn: HTMLButtonElement, form: HTMLFormElement) {
+  toggleActiveButton(activeBtn, inactiveBtn); // Активируем выбранную кнопку
+  validateForm(form);                         // Проверяем форму заново
 }
 
-// Обработчик выбора метода оплаты (форма заказа)
-export function handlePaymentClick(
-  clickedButton: HTMLButtonElement, // Нажатая кнопка
-  otherButton: HTMLButtonElement,   // Альтернативная кнопка
-  form: HTMLFormElement            // Форма заказа
-): void {
-  toggleActiveButton(clickedButton, otherButton); // Переключаем активность кнопок
-  validateForm(form);                             // Повторно проверяем форму
+// Изменение статуса кнопок платежей
+function toggleActiveButton(activeBtn: HTMLButtonElement, inactiveBtn: HTMLButtonElement) {
+  activeBtn.classList.toggle('button_alt-active', true);
+  inactiveBtn.classList.toggle('button_alt-active', false);
 }
 
-// Обработчик изменения поля Email (контактная форма)
-export function handleEmailInput(event: Event, form: HTMLFormElement): void {
-  event.preventDefault(); // Предотвращение стандартного поведения
-  validateContactForm(form); // Проверка контактной формы
+// Общая обработка изменений полей формы
+export function handleInputChange(event: Event, validator: (form: HTMLFormElement) => boolean, form: HTMLFormElement) {
+  event.preventDefault();
+  validator(form);
 }
 
-// Обработчик изменения поля телефона (контактная форма)
-export function handlePhoneInput(event: Event, form: HTMLFormElement): void {
-  event.preventDefault(); // Предотвращение стандартного поведения
-  validateContactForm(form); // Проверка контактной формы
+// Очистка ошибок формы
+export function resetErrors(errors?: Array<HTMLElement>) {
+  if (!errors) return;
+  errors.forEach(err => {
+    err.textContent = '';
+    err.classList.add('hidden-error-message');
+  });
 }
 
-// Очистка сообщений об ошибках
-export function resetErrors(errors?: Array<HTMLElement>): void {
-  if (errors) {
-    for (const err of errors) {
-      err.textContent = '';                   // Очищаем сообщение об ошибке
-      err.classList.add('hidden-error-message'); // Прячем блок ошибки
-    }
-  }
-}
-
-// Отображение ошибки
-export function displayError(errorElement: HTMLSpanElement, message: string): void {
-  errorElement.textContent = message;              // Вставляем текст ошибки
-  errorElement.classList.remove('hidden-error-message'); // Показываем ошибку
+// Публикация ошибки
+export function displayError(errorElement: HTMLSpanElement, message: string) {
+  errorElement.textContent = message;
+  errorElement.classList.remove('hidden-error-message');
 }

@@ -1,13 +1,17 @@
 // types.ts
 
-// Интерфейс описывает структуру товара
-export interface Product {
-  id: string;           // Идентификатор товара
-  title: string;        // Название товара
-  category: string;     // Категория товара
-  image: string;        // Изображение товара
-  price: number;        // Цена товара
-  description?: string; // Необязательное описание товара
-  quantity?: number;    // Количество товара в корзине (необязательно)
-  index?: number;       // Позиция товара в списке (необязательно)
+export interface IProduct {
+  id: string;                 // уникальный идентификатор товара
+  title: string;              // название товара
+  category: string;           // категория товара
+  image: string;              // путь к изображению товара
+  price: number;              // цена товара
+  description?: string;       // опциональное описание товара
+  quantity?: number;          // количество товара в корзине (если актуально)
+}
+
+export interface IForm<T extends Element> {
+  form: T;
+  fields: Record<string, HTMLInputElement>;
+  buttons: Record<string, HTMLButtonElement>;
 }

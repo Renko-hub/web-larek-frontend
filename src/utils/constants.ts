@@ -11,5 +11,3 @@ export const categoryClasses: Record<string, string> = {
   кнопка: 'card__category_button',
   'хард-скил': 'card__category_hard',
 };
-
-export const settings = {};
