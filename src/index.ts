@@ -12,7 +12,6 @@ import { IProduct } from './components/ProductModel';
 import { Api } from './components/base/api';
 import { API_URL, CDN_URL, categoryClasses } from './utils/constants';
 import { ProductModel, ProductsResponse } from './components/ProductModel';
-import { PaymentMethod } from './components/FormModel';
 import { Page } from './components/Page';
 
 import './scss/styles.scss';
@@ -31,10 +30,10 @@ const page = new Page(events, cardView);
 
 let openCounter = 0;
 
-events.on('form:change-address', ({ address }: { address: string }) => {});
-events.on('form:change-payment-method', ({ paymentMethod }: { paymentMethod: PaymentMethod }) => {});
-events.on('form:change-email', ({ email }: { email: string }) => {});
-events.on('form:change-phone', ({ phone }: { phone: string }) => {});
+events.on('form:change-address', () => {});
+events.on('form:change-payment-method', () => {});
+events.on('form:change-email', () => {});
+events.on('form:change-phone', () => {});
 
 events.on('form:submit-contacts', () => events.emit('contact:submit'));
 events.on('order:start', () => orderView.showOrder());
@@ -84,7 +83,7 @@ function loadCatalog() {
             const products = (response as ProductsResponse).items || [];
             ProductModel.getInstance(events).set(products);
         })
-        .catch(err => {});
+        .catch(() => {});
 }
 
 window.onload = () => {
