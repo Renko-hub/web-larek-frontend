@@ -1,47 +1,59 @@
 // SuccessView.ts
 
-import { BaseModal } from './BaseModal';
-import { ensureElement, cloneTemplate } from '../utils/utils';
-import { EventEmitter } from './base/events';
+// Представление успешного завершения покупки
+import { cloneTemplate, ensureElement } from '../utils/utils';
+import { Modal } from './Modal';
 
-// Окно успешного завершения операции
-export class SuccessView extends BaseModal {
-  private static _instance: SuccessView | null = null; // Поле для реализации паттерна Singleton
-  private events: EventEmitter | null = null; // Хранилище объектов событий
+export class SuccessView {
+    private static instance: SuccessView; // Синглтон представление успеха
+    private readonly _eventEmitter: any; // Эммитер событий для взаимодействия с другими компонентами
+    private modal: Modal; // Экземпляр модального окна
+    private totalSumEl: HTMLElement | null = null; // Элемент отображения итоговой суммы
+    private closeButtonInModal: HTMLElement | null = null; // Кнопка закрытия модала
 
-  private constructor() { // Приватный конструктор для предотвращения внешнего инстанцирования
-    super('#modal-container');
-  }
-
-  public static getInstance(): SuccessView { // Метод получения единственного экземпляра класса
-    return SuccessView._instance || (SuccessView._instance = new SuccessView());
-  }
-
-  initialize(events: EventEmitter): void { // Инициализация объекта SuccessView
-    this.events = events;
-  }
-
-  showSuccess(totalAmount: number): void { // Метод отображения окна успеха
-    if (!this.events) throw new Error('Events are not initialized!');
-
-    const successContent = cloneTemplate('#success')!;
-    this.setContent(successContent);
-
-    const descriptionEl = ensureElement('.order-success__description', successContent);
-    const closeButton = ensureElement('.order-success__close', successContent) as HTMLButtonElement | null;
-
-    if (descriptionEl) {
-      descriptionEl.textContent = `Итого списано: ${totalAmount} синапсов.`; // Отображаем итоговую сумму
+    private constructor(eventEmitter: any) {
+        this._eventEmitter = eventEmitter;
+        this.modal = Modal.getInstance('modal-container'); // Инициализируем модал
     }
 
-    if (closeButton) {
-      closeButton.onclick = () => this.hideSuccess(); // Обрабатываем клик по кнопке закрытия
+    // Получаем singleton-экземпляр SuccessView
+    public static getInstance(eventEmitter: any): SuccessView {
+        if (!SuccessView.instance) {
+            SuccessView.instance = new SuccessView(eventEmitter);
+        }
+        return SuccessView.instance;
     }
 
-    this.open();
-  }
+    // Открытие окна успешного завершения заказа
+    openSuccess(): void {
+        this._eventEmitter.emit('order-success');
+        this._eventEmitter.emit('successview:opened');
+        const successTemplate = ensureElement('#success') as HTMLTemplateElement; // Шаблон успешного завершения
+        if (successTemplate) {
+            const successClone = cloneTemplate(successTemplate);
+            if (successClone) {
+                this.modal.setContent(successClone); // Устанавливаем контент модала
+                this.totalSumEl = ensureElement('.order-success__description', successClone); // Сообщение с суммой
+                this.closeButtonInModal = ensureElement('.order-success__close', successClone); // Кнопка закрытия модала
 
-  hideSuccess(): void { // Метод скрытия окна успеха
-    this.close();
-  }
+                if (this.totalSumEl) {
+                    this._eventEmitter.emit('request:basket-total-sum', (totalSum: number) => {
+                        this.totalSumEl.textContent = `Списано ${totalSum} синапсов`; // Вывести общую сумму списания
+                    });
+                }
+
+                if (this.closeButtonInModal) {
+                    this.closeButtonInModal.addEventListener('click', () => this.close(), { once: true }); // Однократное закрытие модала
+                }
+
+                this.modal.open(); // Открываем модал
+            }
+        }
+    }
+
+    // Закрыть окно успешного завершения заказа
+    close(): void {
+        this.modal.close();
+        this._eventEmitter.emit('successview:closed');
+    }
 }

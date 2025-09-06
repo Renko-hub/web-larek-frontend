@@ -1,95 +1,118 @@
 // BasketView.ts
 
-import { BaseModal } from './BaseModal';
-import { BasketModel } from './BasketModel';
-import { EventEmitter } from './base/events';
 import { cloneTemplate, ensureElement } from '../utils/utils';
-import { createProductCard } from './Components';
-import { OrderView } from './OrderView';
+import { Modal } from './Modal';
 
-// Экспорт класса представления корзины, наследуемого от базового модального окна
-export class BasketView extends BaseModal {
-  // Статическое поле экземпляра класса, используемое для реализации паттерна Singleton
-  private static _instance: BasketView | null = null;
+export class BasketView {
+    private static instance: BasketView; // Синглтон представления корзины
+    private modal: Modal; // Экземпляр модального окна
+    private headerBasketButton: HTMLElement | null; // Элемент кнопки открытия корзины в шапке сайта
+    private basketCounter: HTMLElement | null; // Элемент индикатора количества товаров в корзине
+    private readonly _eventEmitter: any; // Эммитер событий для взаимодействия с другими компонентами
 
-  // Приватное свойство для хранения диспетчера событий
-  private events: EventEmitter | null = null;
-
-  // Конструктор принимает экземпляр диспетчера событий и вызывает конструктор родительского класса
-  private constructor(events: EventEmitter) {
-    super('#modal-container'); // Передаем селектор контейнера модальных окон
-    this.events = events; // Сохраняем переданный экземпляр события
-  }
-
-  // Метод для получения единственного экземпляра класса (паттерн Singleton)
-  public static getInstance(events: EventEmitter): BasketView {
-    return BasketView._instance || (BasketView._instance = new BasketView(events)); // Возвращаем существующий экземпляр или создаем новый
-  }
-
-  // Инициализация компонента корзины, привязка обработчиков событий
-  public initialize(events: EventEmitter): void {
-    this.events = events; // Обновляем ссылку на диспетчер событий
-    this.events.on('basket:update', () => this.refreshUI()); // Подписываемся на событие обновления корзины
-
-    // Получаем элемент иконки корзины и добавляем обработчик кликов
-    const basketIcon = ensureElement('.header__basket');
-    if (basketIcon) {
-      basketIcon.addEventListener('click', () => this.showBasket()); // Показываем корзину при нажатии на иконку
+    private constructor(eventEmitter: any) {
+        this._eventEmitter = eventEmitter;
+        this.modal = Modal.getInstance('modal-container'); // Инициализируем модал
+        this.headerBasketButton = ensureElement('.header__basket'); // Кнопка открытия корзины
+        this.basketCounter = ensureElement('.header__basket-counter'); // Индикатор количества товаров
+        
+        if (this.headerBasketButton && this._eventEmitter) {
+            this.headerBasketButton.addEventListener('click', () => {
+                this._eventEmitter.emit('open-basket'); // Отправляем событие открытия корзины
+            });
+        }
     }
-  }
 
-  // Отображение содержимого корзины в модальном окне
-  showBasket(): void {
-    // Клонируем шаблон корзины и устанавливаем его содержимое модальному окну
-    const modalContent = cloneTemplate('#basket')!;
-    this.setContent(modalContent); // Устанавливаем контент модала
-
-    // Получаем элементы списка товаров, итоговой суммы и кнопки заказа
-    const list = ensureElement('.basket__list', modalContent)! as HTMLUListElement,
-          totalPrice = ensureElement('.basket__price', modalContent)! as HTMLDivElement,
-          orderButton = ensureElement('.basket__button', modalContent)! as HTMLButtonElement;
-
-    // Получаем список продуктов и общую сумму из модели корзины
-    const { basketProducts, basketTotalPrice } = BasketModel.getInstance(this.events);
-
-    // Очищаем список товаров
-    list.innerHTML = '';
-
-    // Формируем карточки товаров и добавляем их в список
-    basketProducts.forEach((product) => {
-      const card = createProductCard(product, () => {
-        BasketModel.getInstance(this.events).removeFromBasket(product.id); // Удаление товара из корзины
-        this.showBasket(); // Перезагружаем представление корзины
-      });
-      list.appendChild(card); // Добавляем карточку продукта в список
-    });
-
-    // Устанавливаем отображаемую стоимость корзины
-    totalPrice.textContent = `${basketTotalPrice} синапсов`; // Используем валюту 'синапс'
-
-    // Деактивируем кнопку оформления заказа, если корзина пуста
-    orderButton.disabled = !basketProducts.length;
-
-    // Назначаем обработчик клика на кнопке заказа
-    orderButton.onclick = () => {
-      this.close(); // Закрываем окно корзины
-      OrderView.getInstance().showOrder(); // Открываем форму оформления заказа
-    };
-
-    // Открываем модальное окно корзины
-    this.open();
-  }
-
-  // Скрытие корзины (закрытие модального окна)
-  hideBasket(): void {
-    this.close();
-  }
-
-  // Обновление интерфейса корзины (количество товаров в шапке сайта)
-  refreshUI(): void {
-    const counterElement = ensureElement('.header__basket-counter');
-    if (counterElement && this.events) {
-      counterElement.textContent = BasketModel.getInstance(this.events).basketTotalCount.toString(); // Обновляем количество товаров в корзине
+    // Получаем singleton-экземпляр корзины
+    public static getInstance(eventEmitter: any): BasketView {
+        if (!BasketView.instance) {
+            BasketView.instance = new BasketView(eventEmitter);
+        }
+        return BasketView.instance;
     }
-  }
+
+    // Открытие корзины
+    openBasket() {
+        const basketTemplate = ensureElement('#basket') as HTMLTemplateElement; // Шабатн корзины
+        if (!basketTemplate) return;
+    
+        const clonedTemplate = cloneTemplate(basketTemplate); // Клонируем шаблон
+        if (!clonedTemplate) return;
+    
+        this.modal.setContent(clonedTemplate); // Устанавливаем содержание модала
+        this.modal.open(); // Открываем модал
+
+        const basketList = ensureElement('.basket__list', clonedTemplate); // Список товаров в корзине
+        const basketTotalPrice = ensureElement('.basket__price', clonedTemplate); // Итоговая сумма корзины
+
+        if (!basketList || !basketTotalPrice) return;
+    
+        this.renderBasketItems(basketList, basketTotalPrice); // Рендерим товары корзины
+    }
+
+    // Рендер списка товаров в корзине
+    renderBasketItems(listContainer: HTMLElement, totalPriceElement: HTMLElement) {
+        this._eventEmitter.emit('request:basket-data', (data: any[]) => {
+            listContainer.innerHTML = '';
+
+            data.forEach((item, index) => {
+                const basketItem = cloneTemplate<HTMLElement>('#card-basket'); // Карточка товара в корзине
+                if (!basketItem) return;
+
+                const indexEl = ensureElement('.basket__item-index', basketItem); // Номер элемента
+                const titleEl = ensureElement('.card__title', basketItem); // Название товара
+                const priceEl = ensureElement('.card__price', basketItem); // Цена товара
+                const deleteButton = ensureElement('.basket__item-delete', basketItem); // Кнопка удаления товара
+
+                if (indexEl) indexEl.textContent = (index + 1).toString();
+                if (titleEl) titleEl.textContent = item.title;
+                if (priceEl) priceEl.textContent = `${item.price * item.quantity} синапсов`;
+
+                if (deleteButton) {
+                    deleteButton.addEventListener('click', () => {
+                        this._eventEmitter.emit('remove-from-basket', { productId: item.id }); // Уведомляем удаление товара
+                        this.renderBasketItems(ensureElement('.basket__list'), ensureElement('.basket__price')); // Перерисовываем список товаров
+                    });
+                }
+
+                listContainer.appendChild(basketItem);
+            });
+
+            // Обновляем итоговую сумму корзины
+            this._eventEmitter.emit('request:basket-total-sum', (totalSum: number) => {
+                totalPriceElement.textContent = `${totalSum} синапсов`;
+            });
+
+            // Проверяем состояние корзины
+            this._eventEmitter.emit('request:basket-is-empty', (isEmpty: boolean) => {
+                const checkoutButton = ensureElement<HTMLButtonElement>('.basket__button');
+                if (checkoutButton) {
+                    checkoutButton.disabled = isEmpty;
+                    
+                    if (!isEmpty) {
+                        checkoutButton.addEventListener('click', () => {
+                            this._eventEmitter.emit('open-order'); // Переход к оформлению заказа
+                        });
+                    }
+                }
+                
+                if (isEmpty) {
+                    totalPriceElement.textContent = 'Корзина пуста';
+                }
+            });
+        });
+    }
+
+    // Закрытие корзины
+    close() {
+        this.modal.close();
+    }
+
+    // Обновляет индикатор количества товаров в корзине
+    updateBasketCounter() {
+        if (!this.basketCounter) return;
+        this._eventEmitter.emit('request:basket-count', (count: number) => {
+            this.basketCounter.textContent = count.toString();
+        });
+    }
 }

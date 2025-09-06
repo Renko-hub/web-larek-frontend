@@ -22,13 +22,13 @@
     @include mixins.flex(column);
     gap: $defaultPadding;
     background-color: $background;
-    // min-height: 90vmin;
     border-radius: 3rem;
     box-sizing: border-box;
     position: absolute;
     top: 50%;                       /* Перемещаем верхушку на середину страницы */
     left: 50%;                      /* Перемещаем левую сторону на середину страницы */
     transform: translate(-50%, -50%); /* Корректировка координат по центру */
+
   }
 
   &__content {

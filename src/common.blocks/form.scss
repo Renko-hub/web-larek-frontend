@@ -34,15 +34,4 @@
       color: lighten($primaryLight, 23%);
     }
   }
-
-  // ==== Блок управления видимостями ошибок ===========
-  &__errors {
-    &.hidden-error-message {
-      display: none; /* Полностью скрываем элемент */
-    }
-
-    &.visible-error-message {
-      display: block; /* Полностью отображаем элемент */
-    }
-  }
 }

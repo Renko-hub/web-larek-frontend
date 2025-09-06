@@ -147,12 +147,17 @@ export function validatePhone(phone: string): boolean {
 }
 
 // Улучшенная проверка email
-export function ValidEmail(email: string): boolean {
+export function validateEmail(email: string): boolean {
   const re = /^[^@]+@[^@]+\.[^@]+$/i;
   return re.test(email.trim());
 }
 
 // Условие заполненности поля
-export function isRequired(value: string): boolean {
-  return value.trim() !== '';
+export function isRequired(value: unknown): boolean {
+    const trimmed = typeof value === 'string' ? value.trim() : '';
+
+    return (
+        typeof value === 'string' &&
+        trimmed !== ''
+    );
 }

@@ -1,78 +1,61 @@
 // BasketModel.ts
 
-import { EventEmitter } from './base/events';
-import { IProduct } from '../types/index';
+import { IProduct } from './ProductModel';
 
-// Синглтон-модель корзины
 export class BasketModel {
-  private static instances: Record<string, BasketModel> = {}; // Хранение экземпляров моделей корзины
+    private products: Map<string, IProduct> = new Map(); // Хранение продуктов по ключу (id)
+    private quantities: Map<string, number> = new Map(); // Хранение количества каждого продукта
 
-  private products: Map<string, IProduct>; // Карта хранимых продуктов
-  private readonly events: EventEmitter; // Система событий
-
-  // Приватный конструктор для предотвращения прямого инстанцирования
-  private constructor(events: EventEmitter) {
-    this.products = new Map();
-    this.events = events;
-  }
-
-  // Фабрика экземпляра корзины с использованием уникального ключа
-  static getInstance(events: EventEmitter): BasketModel {
-    const key = events.constructor.name;
-    if (!BasketModel.instances[key]) {
-      BasketModel.instances[key] = new BasketModel(events);
+    // Вычисляемое свойство: общая стоимость всех товаров в корзине
+    get totalPrice(): number {
+        return Array.from(this.products.entries())
+            .reduce((sum, [_, product]) => sum + (product.price * (this.quantities.get(product.id) ?? 0)), 0);
     }
-    return BasketModel.instances[key];
-  }
 
-  // Вычисляем общую стоимость корзины
-  get basketTotalPrice(): number {
-    return [...this.products.values()]
-      .reduce((acc, prod) => acc + (prod.price * (prod.quantity || 1)), 0);
-  }
-
-  // Вычисляем общее количество товаров в корзине
-  get basketTotalCount(): number {
-    return [...this.products.values()]
-      .reduce((acc, prod) => acc + (prod.quantity || 1), 0);
-  }
-
-  // Возвращает массив текущих продуктов в корзине
-  get basketProducts(): IProduct[] {
-    return Array.from(this.products.values());
-  }
-
-  // Добавляет продукт в корзину
-  addToBasket(product: IProduct): void {
-    const existingProduct = this.products.get(product.id);
-    this.products.set(product.id, {
-      ...product,
-      quantity: (existingProduct?.quantity ?? 0) + 1
-    });
-    this.events.emit('basket:update'); // Оповещаем систему о изменении состояния корзины
-  }
-
-  // Удаляет единицу продукта из корзины
-  removeFromBasket(productId: string): void {
-    const product = this.products.get(productId);
-    if (product) {
-      if (product.quantity === 1) {
-        this.products.delete(productId); // Полностью удаляем товар, если остался последний
-      } else {
-        this.products.set(productId, { ...product, quantity: product.quantity - 1 }); // Уменьшаем количество товара
-      }
-      this.events.emit('basket:update'); // Оповещаем систему о изменении состояния корзины
+    // Вычисляемое свойство: общее количество товаров в корзине
+    get totalItems(): number {
+        return Array.from(this.quantities.values()).reduce((a, b) => a + b, 0);
     }
-  }
 
-  // Полностью очищает корзину
-  clearBasket(): void {
-    this.products.clear();
-    this.events.emit('basket:update'); // Оповещаем систему о изменении состояния корзины
-  }
+    // Получение списка товаров с количеством
+    get items(): IProduct[] {
+        return Array.from(this.products.keys()).map(key => ({
+            ...this.products.get(key)!,
+            quantity: this.quantities.get(key)!
+        }));
+    }
 
-  // Поиск продукта по его идентификатору
-  findProductById(productId: string): IProduct | undefined {
-    return this.products.get(productId);
-  }
+    // Фильтрация товаров по цене больше нуля
+    getFilteredItems(): IProduct[] {
+        return Array.from(this.products.keys())
+                   .map(key => ({...this.products.get(key)!, quantity: this.quantities.get(key)!}))
+                   .filter(item => item.price > 0);
+    }
+
+    // Добавляет товар в корзину (если товар уже существует, обновляется только количество)
+    add(product: IProduct): void {
+        if (this.products.has(product.id)) return;
+        this.products.set(product.id, product);
+        this.quantities.set(product.id, 1);
+    }
+
+    // Удаляет один экземпляр товара из корзины
+    removeOne(productId: string): void {
+        const product = this.products.get(productId);
+        if (product) {
+            this.products.delete(productId);
+            this.quantities.delete(productId);
+        }
+    }
+
+    // Полностью очищает корзину
+    clear(): void {
+        this.products.clear();
+        this.quantities.clear();
+    }
+
+    // Проверяет, пуста ли корзина
+    isEmpty(): boolean {
+        return this.products.size === 0 && this.quantities.size === 0;
+    }
 }

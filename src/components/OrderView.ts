@@ -1,78 +1,95 @@
 // OrderView.ts
 
-import { BaseModal } from './BaseModal';
-import { cloneTemplate, ensureElement } from '../utils/utils';
-import { validateForm } from './Forms';
-import { EventEmitter } from './base/events';
-import { IForm } from '../types';
-import { ContactsView } from './ContactsView';
-import { setupListeners } from './Components';
+import { cloneTemplate, ensureElement, ensureAllElements } from '../utils/utils';
+import { updateError, selectPaymentMethod } from './Components';
+import { Modal } from './Modal';
 
-// Интерфейс формы заказа
-class OrderForm implements IForm<HTMLFormElement> {
-  constructor(public form: HTMLFormElement) {} // Конструктор с формой заказа
+export class OrderView {
+    private static instance: OrderView; // Синглтон представление оформления заказа
+    private modal: Modal; // Экземпляр модального окна
+    private addressField: HTMLInputElement | null; // Поле ввода адреса доставки
+    private nextButton: HTMLButtonElement | null; // Кнопка перехода к следующему этапу
+    private paymentButtons: HTMLButtonElement[] = []; // Массив кнопок выбора способов оплаты
+    private readonly _eventEmitter: any; // Эммитер событий для взаимодействия с другими компонентами
 
-  get fields(): Record<string, HTMLInputElement> { // Поля формы
-    return {
-      address: ensureElement('[name=address]', this.form) as HTMLInputElement, // Поле адреса доставки
-    };
-  }
+    private constructor(eventEmitter: any) {
+        this._eventEmitter = eventEmitter;
+        this.modal = Modal.getInstance('modal-container'); // Инициализируем модал
+    }
 
-  get buttons(): Record<string, HTMLButtonElement> { // Кнопки формы
-    return {
-      cardButton: ensureElement('button[name="card"]', this.form) as HTMLButtonElement, // Оплатить картой
-      cashButton: ensureElement('button[name="cash"]', this.form) as HTMLButtonElement, // Оплата наличными
-      submitButton: ensureElement('.order__button', this.form) as HTMLButtonElement, // Кнопка отправки заказа
-    };
-  }
+    // Получаем singleton-экземпляр OrderView
+    public static getInstance(eventEmitter: any): OrderView {
+        if (!OrderView.instance) {
+            OrderView.instance = new OrderView(eventEmitter);
+        }
+        return OrderView.instance;
+    }
 
-  static createFromParent(parentNode: HTMLElement): OrderForm | null { // Создание объекта формы из родительского узла
-    const form = ensureElement('.form', parentNode) as HTMLFormElement;
-    if (!form) return null;
-    return new OrderForm(form);
-  }
-}
+    // Открытие экрана оформления заказа
+    openOrder() {
+        this._eventEmitter.emit('orderview:opened');
+        const orderTemplate = ensureElement('#order') as HTMLTemplateElement; // Шаблон оформления заказа
+        if (orderTemplate) {
+            const orderClone = cloneTemplate(orderTemplate);
+            if (orderClone) {
+                this.modal.setContent(orderClone); // Устанавливаем контент модала
+                this.addressField = ensureElement('input[name="address"]', orderClone) as HTMLInputElement; // Поле адреса
+                this.nextButton = ensureElement('.order__button', orderClone) as HTMLButtonElement; // Кнопка продолжения
+                this.paymentButtons = ensureAllElements<HTMLButtonElement>('.order__buttons > button', orderClone); // Способы оплаты
 
-// Представление страницы оформления заказа
-export class OrderView extends BaseModal {
-  private static instance: OrderView | null = null; // Поле для реализации паттерна Singleton
-  private events: EventEmitter | null = null; // Хранилище объектов событий
+                if (!this.addressField || !this.paymentButtons.length || !this.nextButton) {
+                    throw new Error('Некорректная разметка формы заказа.'); // Бросаем ошибку, если разметка некорректна
+                }
 
-  private constructor() { // Приватный конструктор для предотвращения внешнего инстанцирования
-    super('#modal-container');
-  }
+                // Устанавливаем начальные значения в модели формы
+                this._eventEmitter.emit('form-model:set-payment', { newPayment: '' });
+                this._eventEmitter.emit('form-model:set-address', { newAddress: this.addressField.value });
 
-  public static getInstance(): OrderView { // Метод получения единственного экземпляра класса
-    return OrderView.instance || (OrderView.instance = new OrderView());
-  }
+                // Реагируем на изменения в поле адреса
+                this.addressField.addEventListener('input', () => {
+                    this._eventEmitter.emit('form-model:set-address', { newAddress: this.addressField.value });
+                });
 
-  initialize(events: EventEmitter): void { // Инициализация объекта OrderView
-    this.events = events;
-  }
+                // Выбор способа оплаты
+                this.paymentButtons.forEach((button, index) => {
+                    button.addEventListener('click', () => {
+                        this.selectPaymentMethod(index); // Изменяем активный способ оплаты
+                    });
+                });
 
-  showOrder(): void { // Метод открытия окна оформления заказа
-    if (!this.events) throw new Error('Events are not initialized!');
+                // Продолжаем оформление заказа
+                this.nextButton.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    this._eventEmitter.emit('open-contacts'); // Переход к экрану контактов
+                });
+            }
+        }
+        this.modal.open(); // Открываем модал
+    }
 
-    const orderContent = cloneTemplate('#order');
-    this.setContent(orderContent);
+    // Закрываем окно оформления заказа
+    close() {
+        this.modal.close();
+    }
 
-    const formData = OrderForm.createFromParent(this.content!)!;
+    // Активирует/деактивирует кнопку "Далее"
+    enableNextButton(value: boolean) {
+        if (this.nextButton) {
+            this.nextButton.disabled = !value;
+        }
+    }
 
-    setupListeners(formData);
+    // Обновляет сообщение об ошибке
+    updateError(errorMessage?: string) {
+        updateError(this.addressField, 'order-error', errorMessage);
+    }
 
-    formData.buttons.submitButton.addEventListener('click', () => { // Регистрация обработчика кнопки отправки
-      if (validateForm(formData.form)) {
-        this.hideOrder();
-        ContactsView.getInstance().initialize(this.events);
-        ContactsView.getInstance().showContacts();
-      }
-    });
-
-    validateForm(formData.form);
-    this.open();
-  }
-
-  hideOrder(): void { // Метод скрытия окна оформления заказа
-    this.close();
-  }
+    // Меняет активный способ оплаты
+    selectPaymentMethod(selectedIndex: number) {
+        if (this.paymentButtons) {
+            selectPaymentMethod(this.paymentButtons, selectedIndex, (newPayment: string) => {
+                this._eventEmitter.emit('form-model:set-payment', { newPayment });
+            });
+        }
+    }
 }

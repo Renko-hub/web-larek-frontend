@@ -1,81 +1,74 @@
 // CardView.ts
 
-import { BaseModal } from './BaseModal';
-import { IProduct } from '../types/index';
-import { ensureElement, cloneTemplate } from '../utils/utils';
-import { BasketController } from './BasketController';
-import { ProductRenderer } from './Page';
-import { EventEmitter } from './base/events';
+import { ensureElement } from '../utils/utils';
+import { IProduct } from './ProductModel';
+import { Modal } from './Modal';
+import { Card } from './Card'; 
 
-// Класс для удобного обращения к элементам карточки товара
-class CardElements {
-  readonly addToCartBtn: HTMLButtonElement | null; // Кнопка добавления/удаления товара из корзины
+export class CardView {
+    private static instance: CardView; // Синглтон представления карточки 
+    private readonly _eventEmitter: any; // Эммитер событий для взаимодействия с другими компонентами
+    private modal: Modal; // Экземпляр модального окна
+    private cardService: Card; // Сервис для рендера карточек
+    private fullCardElement: HTMLElement | null = null; // Элемент детальной карточки
+    private buyButton: HTMLButtonElement | null = null; // Кнопка добавления товара в корзину
+    private initialButtonText: string = ''; // Текущая подпись кнопки ("Купить"/"Удалить")
 
-  constructor(content: HTMLElement) {
-    this.addToCartBtn = ensureElement('.button.card__button', content) as HTMLButtonElement | null;
-  }
-}
-
-// Класс для отображения карточки товара
-export class CardView extends BaseModal {
-  private static _instance: CardView | null = null; // Поле для реализации паттерна Singleton
-  private events: EventEmitter | null = null; // Хранит ссылку на объект диспетчера событий
-
-  // Приватный конструктор для предотвращения прямого инстанцирования
-  private constructor(events: EventEmitter) {
-    super('#modal-container');
-    this.events = events;
-  }
-
-  // Реализация паттерна Singleton — метод возвращает единственный экземпляр класса
-  public static getInstance(events: EventEmitter): CardView {
-    return CardView._instance || (CardView._instance = new CardView(events));
-  }
-
-  // Метод инициализации (может быть расширен позже)
-  initialize(events: EventEmitter): void {}
-
-  // Статический метод для показа карточки товара
-  public static showProductCard(product: IProduct | null, events: EventEmitter): void {
-    if (!product) return;
-
-    const instance = CardView.getInstance(events);
-
-    const card = cloneTemplate('#card-preview')!;
-
-    if (!card) {
-      return;
+    // Конструктор принимает эммитер событий и сервис рендера карточек
+    private constructor(eventEmitter: any, cardService: Card) {
+        this._eventEmitter = eventEmitter;
+        this.modal = Modal.getInstance('#modal-container'); // Инициализируем модал
+        this.cardService = cardService; // Подключаем сервис рендера карточек
     }
 
-    const renderer = new ProductRenderer(card);
-    renderer.render(product!, true); // Передаем флаг полного рендера
-
-    const elements = new CardElements(card);
-
-    if (elements.addToCartBtn) {
-      const basketCtrl = new BasketController(events);
-      const isInBasket = basketCtrl.currentState.findProductById(product!.id) !== undefined;
-
-      elements.addToCartBtn.innerText = isInBasket ? 'Удалить из корзины' : 'Купить';
-
-      elements.addToCartBtn.onclick = () => {
-        if (isInBasket) {
-          basketCtrl.removeFromBasket(product!.id);
-        } else {
-          basketCtrl.addToBasket(product!);
+    // Статический метод возвращает экземпляр CardView
+    public static getInstance(eventEmitter: any, cardService: Card): CardView {
+        if (!CardView.instance) {
+            CardView.instance = new CardView(eventEmitter, cardService);
         }
-        
-        CardView.showProductCard(product, events); // Обновляем карточку после изменений
-        instance.close(); // Закрываем старую версию карточки
-      };
+        return CardView.instance;
     }
 
-    instance.setContent(card);
-    instance.open();
-  }
+    // Открывает подробную карточку товара
+    openCard(product: IProduct): void {
+        this.fullCardElement = this.cardService.renderFullCard(product); // Рендерим полный продукт
+        if (!this.fullCardElement) return;
 
-  // Метод закрытия карточки товара
-  public static hideProductCard(): void {
-    CardView.getInstance(null!).close();
-  }
+        // Получаем кнопку покупки один раз
+        this.buyButton = ensureElement('.card__button', this.fullCardElement) as HTMLButtonElement;
+        if (!this.buyButton) return;
+
+        // Сначала получаем подписью кнопки из шаблона
+        this.initialButtonText = this.buyButton.textContent || 'Купить';
+
+        // Теперь проверяем наличие товара в корзине и устанавливаем правильное состояние кнопки
+        this._eventEmitter.emit('request:basket-data', (data: any[]) => {
+            const existsInBasket = data.some((item) => item.id === product.id); // Проверяем наличие товара в корзине
+
+            if (existsInBasket) {
+                this.buyButton.textContent = 'Удалить из корзины';
+            } else {
+                this.buyButton.textContent = this.initialButtonText; // Оставляем оригинальную подпись кнопки
+            }
+
+            // Назначаем обработчик события
+            this.buyButton.addEventListener('click', () => {
+                if (existsInBasket) { // Проверяем состояние товара в корзине
+                    this._eventEmitter.emit('remove-from-basket', { productId: product.id }); // Удаляем товар из корзины
+                } else {
+                    this._eventEmitter.emit('add-to-basket', product); // Добавляем товар в корзину
+                }
+                this.modal.close(); // Закрываем окно после нажатия
+            }, { once: true }); // Удаляем событие после первого срабатывания
+        });
+
+        // Показываем модальное окно с картой
+        this.modal.setContent(this.fullCardElement);
+        this.modal.open();
+    }
+
+    // Закрытие окна просмотра карты
+    close(): void {
+        this.modal.close();
+    }
 }
