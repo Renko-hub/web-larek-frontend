@@ -66,7 +66,11 @@ export class BasketView {
 
                 if (indexEl) indexEl.textContent = (index + 1).toString();
                 if (titleEl) titleEl.textContent = item.title;
-                if (priceEl) priceEl.textContent = `${item.price * item.quantity} синапсов`;
+                if (priceEl) {
+                let numericPrice = Number(item.price);
+                priceEl.textContent =
+                numericPrice === 0 ? 'Бесплатно' : `${numericPrice * item.quantity} синапсов`;
+                }
 
                 if (deleteButton) {
                     deleteButton.addEventListener('click', () => {
