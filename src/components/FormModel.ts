@@ -1,91 +1,102 @@
 // FormModel.ts
 
-import { isRequired, validateEmail, validatePhone } from '../utils/utils';
+import { validateEmail, validatePhone, isRequired } from '../utils/utils';
+import { IEvents } from './base/events';
 
 interface ValidationConfig {
-    checkAddress?: boolean; // Включает проверку адреса
-    checkPaymentMethod?: boolean; // Включает проверку способа оплаты
-    checkEmail?: boolean; // Включает проверку электронной почты
-    checkPhone?: boolean; // Включает проверку телефона
+    checkAddress?: boolean;
+    checkPaymentMethod?: boolean;
+    checkEmail?: boolean;
+    checkPhone?: boolean;
 }
 
+/**
+ * Модель форм обработки заказов и контактов пользователей.
+ */
 export class FormModel {
-    #address: string = ''; // Адрес доставки
-    #paymentMethod: string = ''; // Способ оплаты
-    #email: string = ''; // Электронная почта
-    #phone: string = ''; // Телефон
-    validationErrors: Record<string, string> = {}; // Объект ошибок валидации полей
+    private address = ''; // Адрес доставки
+    private paymentMethod = ''; // Метод оплаты
+    private email = ''; // Электронная почта клиента
+    private phone = ''; // Телефон клиента
+    public validationErrors: Record<string, string> = {}; // Ошибки валидаторов полей
+    public readonly events: IEvents; // Подключение к системе событий
 
-    // Сбрасывает форму и очищается объект ошибок
-    reset(): void {
-        this.#address = '';
-        this.#paymentMethod = '';
-        this.#email = '';
-        this.#phone = '';
+    constructor(events: IEvents) {
+        this.events = events;
+    }
+
+    // Сбрасывает форму и её поля
+    reset() {
+        this.address = '';
+        this.paymentMethod = '';
+        this.email = '';
+        this.phone = '';
         this.validationErrors = {};
     }
 
-    // Геттер и сеттер для поля адреса
-    getAddress(): string {
-        return this.#address;
+    // Геттер адреса доставки
+    getAddress() { return this.address; }
+
+    // Сеттер адреса доставки
+    setAddress(v: string) {
+        this.address = v.trim();
     }
 
-    setAddress(newAddress: string): void {
-        this.#address = newAddress.trim();
+    // Геттер метода оплаты
+    getPaymentMethod() { return this.paymentMethod; }
+
+    // Сеттер метода оплаты
+    setPaymentMethod(v: string) {
+        this.paymentMethod = v;
     }
 
-    // Геттер и сеттер для поля способа оплаты
-    getPaymentMethod(): string {
-        return this.#paymentMethod;
+    // Геттер e-mail
+    getEmail() { return this.email; }
+
+    // Сеттер e-mail
+    setEmail(v: string) {
+        this.email = v.trim();
     }
 
-    setPaymentMethod(paymentMethod: string): void {
-        this.#paymentMethod = paymentMethod;
+    // Геттер телефона
+    getPhone() { return this.phone; }
+
+    // Сеттер телефона
+    setPhone(v: string) {
+        this.phone = v.trim();
     }
 
-    // Геттер и сеттер для поля e-mail
-    getEmail(): string {
-        return this.#email;
+    // Валидация полей заказа
+    validateOrder(config: ValidationConfig) {
+        const errors: Record<string, string> = {};
+        if (config.checkAddress && !isRequired(this.address)) errors.address = 'Введите адрес доставки';
+        if (config.checkPaymentMethod && !['cash', 'card'].includes(this.paymentMethod)) errors.paymentMethod = 'Выберите способ оплаты';
+        return errors;
     }
 
-    setEmail(email: string): void {
-        this.#email = email.trim();
+    // Валидация контактных данных
+    validateContacts(config: ValidationConfig) {
+        const errors: Record<string, string> = {};
+        if (config.checkEmail && !validateEmail(this.email)) errors.email = 'Введите адрес электронной почты';
+        if (config.checkPhone && !validatePhone(this.phone)) errors.phone = 'Введите номер телефона';
+        return errors;
     }
 
-    // Геттер и сеттер для поля телефона
-    getPhone(): string {
-        return this.#phone;
+    // Проверка валидности всей формы заказа
+    isValidOrder() {
+        const errors = this.validateOrder({ checkAddress: true, checkPaymentMethod: true });
+        this.validationErrors = errors;
+        if (Object.keys(errors).length === 0) this.events.emit('form:valid-order');
+        else this.events.emit('form:order-errors');
+        return Object.keys(errors).length === 0;
     }
 
-    setPhone(phone: string): void {
-        this.#phone = phone.trim();
-    }
-
-    // Функция проверки валидности введенных данных согласно конфигурации
-    validate(config: ValidationConfig): object {
-        this.validationErrors = {};
-
-        if (config.checkAddress && !isRequired(this.getAddress())) {
-            this.validationErrors.address = 'Введите адрес доставки';
-        }
-
-        if (config.checkPaymentMethod && !['cash', 'card'].includes(this.getPaymentMethod())) {
-            this.validationErrors.paymentMethod = 'Выберите способ оплаты';
-        }
-
-        if (config.checkEmail && !validateEmail(this.getEmail())) {
-            this.validationErrors.email = 'Введите электронную почту';
-        }
-
-        if (config.checkPhone && !validatePhone(this.getPhone())) {
-            this.validationErrors.phone = 'Введите телефон';
-        }
-
-        return this.validationErrors;
-    }
-
-    // Определяет, является ли форма валидной
-    isValid(config: ValidationConfig): boolean {
-        return Object.keys(this.validate(config)).length === 0;
+    // Проверка валидности контактных данных
+    isValidContacts() {
+        const errors = this.validateContacts({ checkEmail: true, checkPhone: true });
+        this.validationErrors = errors;
+        if (Object.keys(errors).length === 0) this.events.emit('form:valid-contacts');
+        else this.events.emit('form:contacts-errors');
+        return Object.keys(errors).length === 0;
     }
 }

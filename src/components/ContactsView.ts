@@ -1,87 +1,79 @@
 // ContactsView.ts
 
-import { cloneTemplate, ensureElement } from '../utils/utils';
-import { updateError } from './Components';
-import { Modal } from './Modal';
+import { cloneTemplate, ensureElement, createElement } from '../utils/utils';
 
+/**
+ * Компонент представления контактных данных покупателя.
+ */
 export class ContactsView {
-    private static instance: ContactsView; // Синглтон представление контакта
-    private modal: Modal; // Экземпляр модального окна
-    private nextButton: HTMLButtonElement | null; // Кнопка подтверждения отправки данных
-    private emailField: HTMLInputElement | null; // Поле электронного письма
-    private phoneField: HTMLInputElement | null; // Поле номера телефона
-    private readonly _eventEmitter: any; // Эммитер событий для взаимодействия с другими компонентами
+    private static instance: ContactsView | null = null;
+    private nextButton?: HTMLButtonElement; // Кнопка завершения покупки
+    private emailErrorSpan?: HTMLSpanElement; // Поле вывода ошибок e-mail
+    private phoneErrorSpan?: HTMLSpanElement; // Поле вывода ошибок телефона
+    private emailField: HTMLInputElement; // Поле ввода e-mail
+    private phoneField: HTMLInputElement; // Поле ввода номера телефона
 
-    private constructor(eventEmitter: any) {
-        this._eventEmitter = eventEmitter;
-        this.modal = Modal.getInstance('modal-container'); // Инициализируем модал
+    constructor(private events: any) {
+        const contactsCard = cloneTemplate(ensureElement('#contacts') as HTMLTemplateElement);
+        this.nextButton = ensureElement('.contacts__button', contactsCard) as HTMLButtonElement;
+        this.emailField = ensureElement('input[name="email"]', contactsCard) as HTMLInputElement;
+        this.phoneField = ensureElement('input[name="phone"]', contactsCard) as HTMLInputElement;
+        this.emailErrorSpan = createElement('span', 'contacts__error-email');
+        this.phoneErrorSpan = createElement('span', 'contacts__error-phone');
+        this.emailField.after(this.emailErrorSpan);
+        this.phoneField.after(this.phoneErrorSpan);
     }
 
-    // Получаем singleton-экземпляр ContactView
-    public static getInstance(eventEmitter: any): ContactsView {
-        if (!ContactsView.instance) {
-            ContactsView.instance = new ContactsView(eventEmitter);
-        }
-        return ContactsView.instance;
+    // Возвращает единственный экземпляр компонента
+    static getInstance(events: any): ContactsView {
+        return ContactsView.instance || (ContactsView.instance = new ContactsView(events));
     }
 
-    // Открытие экрана ввода контактных данных
-    openContacts() {
-        this._eventEmitter.emit('contactsview:opened');
-        const contactsTemplate = ensureElement('#contacts') as HTMLTemplateElement; // Шаблон контактных данных
-        if (contactsTemplate) {
-            const contactsClone = cloneTemplate(contactsTemplate);
-            if (contactsClone) {
-                this.modal.setContent(contactsClone); // Устанавливаем контент модала
-                this.nextButton = ensureElement('.contacts__button', contactsClone) as HTMLButtonElement; // Кнопка следующего шага
-                this.emailField = ensureElement('input[name="email"]', contactsClone) as HTMLInputElement; // Поле e-mail
-                this.phoneField = ensureElement('input[name="phone"]', contactsClone) as HTMLInputElement; // Поле телефона
+    // Формирует представление формы контактных данных
+    show(): HTMLElement {
+        // Обработка изменений поля e-mail
+        this.emailField.addEventListener('input', ({ target }) => this.events.emit('change:email', { email: (target as HTMLInputElement).value }));
 
-                if (this.nextButton && this.emailField && this.phoneField) {
-                    // Сохраняем начальные значения в модели формы
-                    this._eventEmitter.emit('form-model:set-email', { newEmail: this.emailField.value });
-                    this._eventEmitter.emit('form-model:set-phone', { newPhone: this.phoneField.value });
+        // Обработка изменений поля телефона
+        this.phoneField.addEventListener('input', ({ target }) => this.events.emit('change:phone', { phone: (target as HTMLInputElement).value }));
 
-                    // Реакция на изменение поля e-mail
-                    this.emailField.addEventListener('input', () => {
-                        this._eventEmitter.emit('form-model:set-email', { newEmail: this.emailField.value });
-                    });
+        // Перенаправление на страницу успешного завершения покупки
+        this.nextButton.addEventListener('click', event => {
+            this.events.emit('open-success');
+            event.preventDefault();
+        });
 
-                    // Реакция на изменение поля телефона
-                    this.phoneField.addEventListener('input', () => {
-                        this._eventEmitter.emit('form-model:set-phone', { newPhone: this.phoneField.value });
-                    });
+        return this.emailField.closest('form')!; // Возвращаем весь элемент формы
+    }
 
-                    // Завершаем ввод контактных данных
-                    this.nextButton.addEventListener('click', (event) => {
-                        event.preventDefault();
-                        this._eventEmitter.emit('open-success'); // Переход к успешному заказу
-                    });
-                }
+    // Обрабатывает ошибки формы контактных данных
+    handleFormErrors(errors: Record<'email' | 'phone', string>): void {
+        ['email', 'phone'].forEach((field: 'email' | 'phone') => {
+            if (errors[field]) {
+                this.showError(field, errors[field]);
+            } else {
+                this.hideError(field);
             }
-        }
-        this.modal.open(); // Открываем модал
+        });
     }
 
-    // Закрываем окно ввода контактных данных
-    close() {
-        this.modal.close();
+    // Включает/выключает кнопку завершения покупки
+    toggleNextButton(enabled: boolean): void {
+        this.nextButton && (
+            this.nextButton.disabled = !enabled,
+            this.nextButton.classList.toggle('disabled', !enabled)
+        );
     }
 
-    // Активирует/деактивирует кнопку "Далее"
-    enableNextButton(value: boolean) {
-        if (this.nextButton) {
-            this.nextButton.disabled = !value;
-        }
+    // Показывает ошибку поля контактных данных
+    showError(field: 'email' | 'phone', message: string): void {
+        const span = field === 'email' ? this.emailErrorSpan : this.phoneErrorSpan;
+        span && ((span.textContent = message), (span.style.display = 'block'));
     }
 
-    // Обновляет сообщение об ошибке поля e-mail
-    updateEmailError(errorMessage?: string) {
-        updateError(this.emailField, 'contact-error', errorMessage);
-    }
-
-    // Обновляет сообщение об ошибке поля телефона
-    updatePhoneError(errorMessage?: string) {
-        updateError(this.phoneField, 'contact-error', errorMessage);
+    // Скрывает ошибку поля контактных данных
+    hideError(field: 'email' | 'phone'): void {
+        const span = field === 'email' ? this.emailErrorSpan : this.phoneErrorSpan;
+        span && (span.style.display = 'none');
     }
 }

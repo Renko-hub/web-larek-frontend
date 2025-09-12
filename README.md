@@ -126,142 +126,264 @@ https://github.com/Renko-hub/web-larek-frontend
  *
  * ---
  *
- * ### Модули и их методы
- *
 /**
- * @module App
- *
- * ### Общая документация
- *
- * Этот модуль объединяет реализацию всех основных компонентов приложения: от точки входа и инфраструктуры до конкретных элементов UI и бизнес-логики.
- *
- * ### index.ts
- *
- * @module EntryPoint
- *
- * Главная точка входа приложения. Управляет всеми основными элементами приложения и обеспечивает их взаимодействие посредством системы событий.
- *
- * ### ProductModel.ts
- *
- * @module ProductModel
- *
- * Модель данных для хранения и управления списком товаров.
- *
- * #### Методы:
- * - **findProductById**: поиск товара по уникальному идентификатору.
- * - **get**: возврат полного списка товаров.
- * - **set**: установка нового набора товаров.
- *
- * ### BasketModel.ts
- *
- * @module BasketModel
- *
- * Модель корзины пользователя, хранит выбранные товары и позволяет управлять ими.
- *
- * #### Методы:
- * - **add**: добавить товар в корзину.
- * - **removeOne**: удалить один экземпляр товара из корзины.
- * - **clear**: очистить корзину.
- * - **totalPrice**: вернуть общую цену товаров в корзине.
- * - **totalItems**: вернуть общее число товаров в корзине.
- * - **isEmpty**: проверить, пуста ли корзина.
- *
- * ### FormModel.ts
- *
- * @module FormModel
- *
- * Модель данных для хранения и проверки данных форм (адрес, оплата, электронная почта, телефон).
- *
- * #### Методы:
- * - **reset**: сброс значений формы.
- * - **get/setAddress**: геттер/сеттер для поля адреса.
- * - **get/setPaymentMethod**: геттер/сеттер для поля способа оплаты.
- * - **get/setEmail**: геттер/сеттер для поля электронной почты.
- * - **get/setPhone**: геттер/сеттер для поля телефона.
- * - **validate**: проверка правильности заполнения формы.
- * - **isValid**: проверка наличия обязательных полей и их правильность.
- *
- * ### Modal.ts
- *
- * @module Modal
- *
- * Всплывающее модальное окно, используется для показа отдельных карточек товаров, корзины, оформления заказа и уведомлений.
- *
- * #### Методы:
- * - **open**: показать модальное окно.
- * - **close**: закрыть модальное окно.
- * - **setContent**: установить новый контент в модальном окне.
- *
- * ### Card.ts
- *
- * @module Card
- *
- * Служба рендеринга карточек товаров в каталоге и корзине.
- *
- * #### Методы:
- * - **renderSimpleCard**: рендерит простую карточку товара.
- * - **renderFullCard**: рендерит детализированную карточку товара.
- *
- * ### CardView.ts
- *
- * @module CardView
- *
- * Представление карточки товара. Используется для отображения подробностей отдельного товара.
- *
- * #### Методы:
- * - **openCard**: показывает карточку товара в модальном окне.
- * - **close**: закрывает открытое модальное окно.
- *
- * ### BasketView.ts
- *
- * @module BasketView
- *
- * Представление корзины. Отображает состав корзины и общий итог.
- *
- * #### Методы:
- * - **openBasket**: показывает корзину в модальном окне.
- * - **updateBasketCounter**: обновляет индикатор количества товаров в корзине.
- *
- * ### OrderView.ts
- *
- * @module OrderView
- *
- * Процесс оформления заказа, включает выбор способа оплаты и ввод адреса доставки.
- *
- * #### Методы:
- * - **openOrder**: открывает страницу оформления заказа.
- * - **enableNextButton**: активация кнопки "Продолжить".
- * - **selectPaymentMethod**: выбирает способ оплаты.
- *
- * ### ContactsView.ts
- *
- * @module ContactsView
- *
- * Ввод контактных данных (электронная почта, телефон) перед оформлением заказа.
- *
- * #### Методы:
- * - **openContacts**: открывает страницу ввода контактных данных.
- * - **enableNextButton**: активация кнопки "Далее".
- *
- * ### SuccessView.ts
- *
- * @module SuccessView
- *
- * Окончательное уведомление об успешной покупке.
- *
- * #### Методы:
- * - **openSuccess**: выводит сообщение об успешной покупке.
- * - **close**: закрывает сообщение об успешной покупке.
- *
- * ### Components.ts
- *
- * @module Components
- *
- * Набор вспомогательных функций для компонентов приложения.
- *
- * #### Функции:
- * - **updateError**: обновление статуса ошибок на формах.
- * - **selectPaymentMethod**: смена активного способа оплаты.
- * - **orderValidation**: проверка валидности заказа.
- * - **contactsValidation**: проверка валидности контактных данных.
+ * @fileoverview Общий файл документации проекта
  */
+
+/**
+ * @module Modal
+ * Класс управления модальным окном. Используется для открытия и закрытия окон с товарами, корзиной, формой заказа и сообщением об успехе операции.
+ */
+class Modal {
+    /**
+     * Получение единственного экземпляра модального окна.
+     * @param {string} containerId ID контейнера модального окна.
+     * @return {Modal} Экземпляр модального окна.
+     */
+    static getInstance(containerId) {}
+
+    /**
+     * Установить контент модального окна.
+     * @param {HTMLElement|null} value Содержимое модального окна.
+     */
+    set content(value) {}
+
+    /**
+     * Открыть модальное окно.
+     */
+    open() {}
+
+    /**
+     * Закрыть модальное окно.
+     */
+    close() {}
+
+    /**
+     * Обработчик события нажатия клавиши Esc для закрытия модального окна.
+     * @param {KeyboardEvent} event Событие клавиатуры.
+     */
+    handleKeyDown(event) {}
+
+    /**
+     * Обработчик события клика мыши для закрытия модального окна.
+     * @param {MouseEvent} event Событие мыши.
+     */
+    handleMouseDown(event) {}
+}
+
+/**
+ * @module Card
+ * Класс для рендеринга карточек товаров на главной странице каталога.
+ */
+class Card {
+    /**
+     * Создать компонент карты товаров.
+     * @param {string} cdnUrl URL облачного хранилища картинок.
+     * @param {*} events Событийный диспетчер.
+     * @param {Record<string,string>} colorsCategory Палитра цветов для категории товаров.
+     */
+    constructor(cdnUrl, events, colorsCategory) {}
+
+    /**
+     * Рендеринг набора товаров на странице.
+     * @param {IProduct|IProduct[]} products Массив объектов товаров.
+     */
+    renderProducts(products) {}
+
+    /**
+     * Генерация карточки товара.
+     * @param {string} cdnUrl URL облачного хранилища картинок.
+     * @param {IProduct} product Данные товара.
+     * @param {*} events Событийный диспетчер.
+     * @param {Record<string,string>} colorsCategory Палитра цветов для категории товаров.
+     * @return {HTMLElement} Карточка товара.
+     */
+    static renderProductCard(cdnUrl, product, events, colorsCategory) {}
+
+    /**
+     * Наполнение элементов карточки информацией о товаре.
+     * @param {HTMLElement} element DOM-элемент карточки.
+     * @param {Partial<IProduct>} product Данные товара.
+     * @param {string} cdnUrl URL облачного хранилища картинок.
+     * @param {Record<string,string>} colorsCategory Палитра цветов для категории товаров.
+     * @param {{skipCategory:boolean, skipImage:boolean}} opts Опции пропуска категорий и изображений.
+     */
+    static fillProductCard(element, product, cdnUrl, colorsCategory, opts={}) {}
+}
+
+/**
+ * @module CardView
+ * Класс для формирования детальной карточки товара в модальном окне.
+ */
+class CardView {
+    /**
+     * Получить единый экземпляр компонента CardView.
+     * @param {*} events Событийный диспетчер.
+     * @param {string} cdnUrl URL облачного хранилища картинок.
+     * @param {Record<string,string>} colorsCategory Палитра цветов для категории товаров.
+     * @return {CardView} Экземпляр CardView.
+     */
+    static getInstance(events, cdnUrl, colorsCategory) {}
+
+    /**
+     * Формирование содержимого модального окна с детальностью конкретного товара.
+     * @param {IProduct} product Информация о товаре.
+     * @param {(p:IProduct)=>void} onAddToBasket Функция добавления товара в корзину.
+     * @param {(id:string)=>void} onRemoveFromBasket Функция удаления товара из корзины.
+     * @param {boolean} isInBasket Признак наличия товара в корзине.
+     * @return {HTMLElement} Карточка товара.
+     */
+    show(product, onAddToBasket, onRemoveFromBasket, isInBasket) {}
+
+    /**
+     * Генерация базовой карточки товара без привязанных событий.
+     * @param {IProduct} product Информация о товаре.
+     * @return {HTMLElement} Карточка товара.
+     */
+    createBaseCardWithoutEvents(product) {}
+}
+
+/**
+ * @module BasketView
+ * Класс для визуализации состояния корзины покупок.
+ */
+class BasketView {
+    /**
+     * Получить единый экземпляр компонента BasketView.
+     * @param {*} events Событийный диспетчер.
+     * @return {BasketView} Экземпляр BasketView.
+     */
+    static getInstance(events) {}
+
+    /**
+     * Отображение текущего состояния корзины.
+     * @param {IBasketItem[]} basketProducts Товары в корзине.
+     * @param {string} emptyMessage Сообщение при пустой корзине.
+     * @param {number} totalPrice Итоговая стоимость корзины.
+     * @param {(id:string)=>void} removeFromBasket Функция удаления товара из корзины.
+     * @return {HTMLElement} DOM-элемент корзины.
+     */
+    show(basketProducts, emptyMessage, totalPrice, removeFromBasket) {}
+
+    /**
+     * Обновление счетчика товаров в корзине.
+     * @param {number} count Текущее количество товаров.
+     */
+    updateBasketCounter(count) {}
+
+    /**
+     * Рендеринг товара в списке корзины.
+     * @private
+     * @param {IBasketItem} product Информация о товаре.
+     * @param {HTMLElement} list Элемент списка корзины.
+     * @param {number} index Индекс элемента в списке.
+     * @param {(id:string)=>void} removeFromBasket Функция удаления товара из корзины.
+     */
+    renderProduct(product, list, index, removeFromBasket) {}
+}
+
+/**
+ * @module OrderView
+ * Класс для визуализации формы заказа.
+ */
+class OrderView {
+    /**
+     * Получить единый экземпляр компонента OrderView.
+     * @param {*} events Событийный диспетчер.
+     * @return {OrderView} Экземпляр OrderView.
+     */
+    static getInstance(events) {}
+
+    /**
+     * Формирование страницы формы заказа.
+     * @return {HTMLElement} DOM-элемент формы заказа.
+     */
+    show() {}
+
+    /**
+     * Обработка ошибок формы заказа.
+     * @param {Record<string,string>} errors Объект с ошибками.
+     */
+    handleFormErrors(errors) {}
+
+    /**
+     * Переключение доступности кнопки продолжения оформления заказа.
+     * @param {boolean} enabled Доступность кнопки.
+     */
+    toggleNextButton(enabled) {}
+
+    /**
+     * Показ ошибки заполнения формы.
+     * @param {string} message Текст ошибки.
+     */
+    showError(message) {}
+
+    /**
+     * Скрытие ошибки заполнения формы.
+     */
+    hideError() {}
+}
+
+/**
+ * @module ContactsView
+ * Класс для визуализации формы контактных данных заказчика.
+ */
+class ContactsView {
+    /**
+     * Получить единый экземпляр компонента ContactsView.
+     * @param {*} events Событийный диспетчер.
+     * @return {ContactsView} Экземпляр ContactsView.
+     */
+    static getInstance(events) {}
+
+    /**
+     * Формирование страницы формы контактных данных.
+     * @return {HTMLElement} DOM-элемент формы контактных данных.
+     */
+    show() {}
+
+    /**
+     * Обработка ошибок формы контактных данных.
+     * @param {Record<'email'|'phone',string>} errors Объект с ошибками.
+     */
+    handleFormErrors(errors) {}
+
+    /**
+     * Переключение доступности кнопки завершения оформления заказа.
+     * @param {boolean} enabled Доступность кнопки.
+     */
+    toggleNextButton(enabled) {}
+
+    /**
+     * Показ ошибки поля контактных данных.
+     * @param {'email'|'phone'} field Имя поля.
+     * @param {string} message Текст ошибки.
+     */
+    showError(field, message) {}
+
+    /**
+     * Скрытие ошибки поля контактных данных.
+     * @param {'email'|'phone'} field Имя поля.
+     */
+    hideError(field) {}
+}
+
+/**
+ * @module SuccessView
+ * Класс для отображения результата успешно выполненной операции.
+ */
+class SuccessView {
+    /**
+     * Получить единый экземпляр компонента SuccessView.
+     * @param {*} events Событийный диспетчер.
+     * @return {SuccessView} Экземпляр SuccessView.
+     */
+    static getInstance(events) {}
+
+    /**
+     * Формирование страницы подтверждения успешности заказа.
+     * @param {number} totalSum Сумма платежа.
+     * @return {HTMLElement} DOM-элемент страницы подтверждения.
+     */
+    show(totalSum) {}
+}
