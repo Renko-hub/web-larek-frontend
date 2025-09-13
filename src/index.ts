@@ -167,6 +167,7 @@ events.on('open-success', async () => {
         modal.open();
         basketModel.clearBasket();
         basketView.updateBasketCounter(basketModel.totalItems);
+        formModel.reset();
     } catch (err) {
         alert('Ошибка при отправке заказа. Попробуйте снова позже.');
         console.error('Ошибка отправки заказа:', err.message);
