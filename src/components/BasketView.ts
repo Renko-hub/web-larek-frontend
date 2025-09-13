@@ -13,6 +13,7 @@ export class BasketView {
     private readonly headerBasketButton: HTMLElement;
     private readonly basketCounter: HTMLElement;
     private readonly basketTemplate: HTMLTemplateElement;
+    private readonly basketCard: HTMLElement;
     private readonly basketItemView: BasketItemView;
     private currentContent: HTMLElement | null = null;
 
@@ -21,6 +22,7 @@ export class BasketView {
         this.headerBasketButton = ensureElement('.header__basket');
         this.basketCounter = ensureElement('.header__basket-counter');
         this.basketTemplate = ensureElement('#basket') as HTMLTemplateElement;
+        this.basketCard = cloneTemplate(this.basketTemplate); // Клонируем шаблон один раз
         this.basketItemView = new BasketItemView();
     
         this.headerBasketButton?.addEventListener('click', () => this.events.emit('open-basket'));
@@ -46,21 +48,20 @@ export class BasketView {
      * @returns Готовый элемент корзины
      */
     render(basketProducts: IBasketItem[], emptyMessage: string, totalPrice: number, removeFromBasket: (id: string) => void): HTMLElement {
-        const basketCard = cloneTemplate(this.basketTemplate);
-        const basketList = ensureElement('.basket__list', basketCard)!;
-        const basketTotalPrice = ensureElement('.basket__price', basketCard)!;
-        const checkoutButton = ensureElement('.basket__button', basketCard) as HTMLButtonElement;
+        const basketList = ensureElement('.basket__list', this.basketCard)!;
+        const basketTotalPrice = ensureElement('.basket__price', this.basketCard)!;
+        const checkoutButton = ensureElement('.basket__button', this.basketCard) as HTMLButtonElement;
 
-        checkoutButton.disabled = !!emptyMessage.trim();
-        checkoutButton.addEventListener('click', () => this.events.emit('open-order'));
+        checkoutButton.disabled = !!emptyMessage.trim(); // Блокировка кнопки при пустоте корзины
+        checkoutButton.addEventListener('click', () => this.events.emit('open-order')); // Двойная установка слушателей не критична, см. ниже пояснения
 
-        basketList.innerHTML = '';
+        basketList.innerHTML = ''; // Очищаем список товаров
         basketProducts.forEach((product) =>
             this.basketItemView.render(product, basketList, removeFromBasket)
         );
 
         basketTotalPrice.textContent = emptyMessage || `${totalPrice} синапсов`;
-        return basketCard;
+        return this.basketCard; // Возвращаем тот же самый шаблон
     }
 
     // Обновляет счётчик количества товаров в корзине

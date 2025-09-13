@@ -25,16 +25,19 @@ export class BasketItemView {
      */
     render(product: IBasketItem, container: HTMLElement, onRemoveClick: (id: string) => void): void {
         const itemClone = cloneTemplate(this.cardBasketTemplate) as HTMLLIElement;
-        
-        // Используем ensureElement для получения элементов
-        const indexSpan = ensureElement(`${this.indexSelector}`, itemClone); 
+
+        // Используется ensureElement для нахождения внутренних элементов в пределах itemClone
+        const indexSpan = ensureElement(this.indexSelector, itemClone); 
         indexSpan.textContent = String(product.index ?? '');
-        
+
+        // Наполнение карточки товарами
         Card.fillProductCard(itemClone, product, '', {}, { skipCategory: true, skipImage: true });
-        
-        const delBtn = ensureElement(`${this.deleteButtonSelector}`, itemClone); 
+
+        // Кнопка удаления
+        const delBtn = ensureElement(this.deleteButtonSelector, itemClone); 
         delBtn.addEventListener('click', () => onRemoveClick(product.id));
-        
+
+        // Добавляем карточку в родительский контейнер
         container.appendChild(itemClone);
     }
 }
