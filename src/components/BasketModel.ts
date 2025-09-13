@@ -5,6 +5,7 @@ import { IEvents } from './base/events';
 
 export interface IBasketItem extends IProduct {
     quantity: number; // Количество выбранного продукта в корзине
+    index?: number;   // Индекс товара в корзине
 }
 
 /**
@@ -50,11 +51,20 @@ export class BasketModel {
         return this.basket.has(id);
     }
 
+    // Метод обновления индексов всех товаров
+    private updateIndexes(): void {
+        let i = 1;
+        for (let item of this.basket.values()) {
+            item.index = i++;
+        }
+    }
+
     // Добавляет товар в корзину
     add(product: IProduct): void {
         if (!product || !product.id) throw new Error("Некорректный продукт");
         if (this.basket.has(product.id)) return;
         this.basket.set(product.id, {...product, quantity: 1}); // Новый товар добавляется с количеством 1
+        this.updateIndexes(); // Переназначаем индексы после добавления товара
         this.events.emit('add-to-basket', product); // Отправляем событие добавления товара
     }
 
@@ -63,6 +73,7 @@ export class BasketModel {
         let item = this.basket.get(productId);
         if (item) {
             item.quantity > 1 ? item.quantity-- : this.basket.delete(productId); // Уменьшаем количество или удаляем товар
+            this.updateIndexes(); // Переназначаем индексы после удаления товара
             this.events.emit('remove-from-basket', { productId }); // Отправляем событие удаления товара
         }
     }

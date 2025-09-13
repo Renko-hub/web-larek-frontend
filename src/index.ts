@@ -33,8 +33,11 @@ const orderView = OrderView.getInstance(events);
 const contactsView = ContactsView.getInstance(events);
 const successView = SuccessView.getInstance(events);
 
+// API-клиент
+const api = new Api(API_URL);
+
 // Загружаем товары
-new Api(API_URL).get('/product')
+api.get('/product')
     .then((response: ApiListResponse<IProduct>) => {
         productModel.set(response.items || []);
         card.renderProducts(productModel.get());
@@ -44,13 +47,18 @@ new Api(API_URL).get('/product')
 // Открытие карточки товара
 events.on('open-product-modal', (product: IProduct) => {
     const isInBasket = basketModel.hasItem(product.id);
-    modal.content = cardView.show(product, basketModel.add.bind(basketModel), basketModel.remove.bind(basketModel), isInBasket);
+    modal.content = cardView.render(product, basketModel.add.bind(basketModel), basketModel.remove.bind(basketModel), isInBasket);
     modal.open();
 });
 
 // Открытие корзины
 events.on('open-basket', () => {
-    modal.content = basketView.show(basketModel.items, basketModel.emptyMessage, basketModel.totalPrice, basketModel.remove.bind(basketModel));
+    modal.content = basketView.render(
+        basketModel.items,
+        basketModel.emptyMessage,
+        basketModel.totalPrice,
+        basketModel.remove.bind(basketModel)
+    );
     modal.open();
 });
 
@@ -62,16 +70,22 @@ events.on('add-to-basket', (product: IProduct) => {
 });
 
 // Удаление товара из корзины
-events.on('remove-from-basket', ({pid}: {pid: string}) => {
-    basketModel.remove(pid);
-    modal.content = basketView.show(basketModel.items, basketModel.emptyMessage, basketModel.totalPrice, basketModel.remove.bind(basketModel));
-    basketView.updateBasketCounter(basketModel.totalItems);
+events.on('remove-from-basket', ({ pid }: { pid: string }) => {
+    basketModel.remove(pid); 
+    modal.content = basketView.render(                 
+        basketModel.items,
+        basketModel.emptyMessage,
+        basketModel.totalPrice,
+        basketModel.remove.bind(basketModel)
+    );
+    basketView.updateBasketCounter(basketModel.totalItems); 
 });
 
 // Оформление заказа
 events.on('open-order', () => {
-    modal.content = orderView.show();
+    modal.content = orderView.render();
     modal.open();
+    orderView.resetState();
     formModel.reset();
     formModel.isValidOrder();
 });
@@ -90,8 +104,9 @@ events.on('change:paymentMethod', ({paymentMethod}: {paymentMethod: string}) => 
 
 // Контакты
 events.on('open-contacts', () => {
-    modal.content = contactsView.show();
+    modal.content = contactsView.render();
     modal.open();
+    contactsView.resetState();
     formModel.isValidContacts();
 });
 
@@ -143,19 +158,16 @@ events.on('open-success', async () => {
         email: formModel.getEmail(),
         phone: formModel.getPhone()
     };
+
     try {
-        const res = await fetch(`${API_URL}/order`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error(await res.text());
-        modal.content = successView.show(data.total);
+        // Отправляем заказ, игнорируя ответ сервера
+        await api.post('/order', data);
+    
+        modal.content = successView.render(data.total);
         modal.open();
-        formModel.reset();
         basketModel.clearBasket();
         basketView.updateBasketCounter(basketModel.totalItems);
-    } catch(err) {
+    } catch (err) {
         alert('Ошибка при отправке заказа. Попробуйте снова позже.');
         console.error('Ошибка отправки заказа:', err.message);
     }

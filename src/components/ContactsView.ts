@@ -30,7 +30,7 @@ export class ContactsView {
     }
 
     // Формирует представление формы контактных данных
-    show(): HTMLElement {
+    render(): HTMLElement {
         // Обработка изменений поля e-mail
         this.emailField.addEventListener('input', ({ target }) => this.events.emit('change:email', { email: (target as HTMLInputElement).value }));
 
@@ -44,6 +44,12 @@ export class ContactsView {
         });
 
         return this.emailField.closest('form')!; // Возвращаем весь элемент формы
+    }
+
+    // Сброс состояния полей контактов
+    resetState() {
+        this.emailField.value = '';
+        this.phoneField.value = '';
     }
 
     // Обрабатывает ошибки формы контактных данных

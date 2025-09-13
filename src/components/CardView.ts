@@ -28,7 +28,7 @@ export class CardView {
     }
 
     // Отображает карточку товара в модальном окне
-    show(product: IProduct, onAddToBasket: (p: IProduct) => void, onRemoveFromBasket: (id: string) => void, isInBasket: boolean): HTMLElement {
+    render(product: IProduct, onAddToBasket: (p: IProduct) => void, onRemoveFromBasket: (id: string) => void, isInBasket: boolean): HTMLElement {
         const card = cloneTemplate(this.previewTemplate);
         Card.fillProductCard(card, product, this.cdnUrl, this.colorsCategory);
 
