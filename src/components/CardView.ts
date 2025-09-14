@@ -14,12 +14,16 @@ export class CardView {
     private readonly colorsCategory: Record<string, string>;
     private events: any;
     private previewTemplate: HTMLTemplateElement; // Шаблон карточки предварительного просмотра
+    private readonly cardTextSelector: string = '.card__text'; // Селектор текста описания продукта
+    private readonly cardButtonSelector: string = '.card__button'; // Селектор кнопки
 
     constructor(events: any, cdnUrl: string, colorsCategory: Record<string, string>) {
         this.events = events;
         this.cdnUrl = cdnUrl;
         this.colorsCategory = colorsCategory;
         this.previewTemplate = ensureElement('#card-preview') as HTMLTemplateElement;
+
+        if (!this.previewTemplate) throw new Error("Шаблон #card-preview не найден"); // проверка существования шаблона
     }
 
     // Возвращает уникальный экземпляр компонента
@@ -32,10 +36,10 @@ export class CardView {
         const card = cloneTemplate(this.previewTemplate);
         Card.fillProductCard(card, product, this.cdnUrl, this.colorsCategory);
 
-        const textEl = ensureElement('.card__text', card);
+        const textEl = ensureElement(this.cardTextSelector, card); // Используем ранее заданные селекторы
         if (textEl && product.description) textEl.textContent = product.description;
 
-        const btn = ensureElement('.card__button', card)!;
+        const btn = ensureElement(this.cardButtonSelector, card)!;
         if (isInBasket) {
             btn.textContent = 'Удалить из корзины';
             btn.onclick = () => {

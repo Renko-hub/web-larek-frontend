@@ -13,10 +13,15 @@ export class SuccessView {
     private readonly closeButtonInModal: HTMLButtonElement | null;
 
     constructor(private events: any) {
-        const template = ensureElement('#success') as HTMLTemplateElement;
-        const clonedTemplate = cloneTemplate(template);
-        this.totalSumEl = ensureElement('.order-success__description', clonedTemplate);
-        this.closeButtonInModal = ensureElement('.order-success__close', clonedTemplate) as HTMLButtonElement;
+    const template = ensureElement('#success') as HTMLTemplateElement;
+    const clonedTemplate = cloneTemplate(template);
+    this.totalSumEl = ensureElement('.order-success__description', clonedTemplate);
+    this.closeButtonInModal = ensureElement('.order-success__close', clonedTemplate) as HTMLButtonElement;
+
+    // Добавляем обработчик сразу в конструкторе
+    this.closeButtonInModal.addEventListener('click', () => {
+        this.events.emit('close-success');
+    });
     }
 
     // Возвращает единственный экземпляр компонента
@@ -31,9 +36,6 @@ export class SuccessView {
         }
     
         this.totalSumEl.textContent = `Списано ${totalSum} синапсов`;
-        this.closeButtonInModal.addEventListener('click', () => {
-            this.events.emit('close-success');
-        });
 
         return this.closeButtonInModal.parentNode as HTMLElement;
     }

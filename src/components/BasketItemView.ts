@@ -9,35 +9,34 @@ import { Card } from './Card';
  */
 export class BasketItemView {
     private readonly cardBasketTemplate: HTMLTemplateElement;
-    private readonly indexSelector: string = '.basket__item-index';   // Селектор индекса
-    private readonly deleteButtonSelector: string = '.basket__item-delete'; // Селектор кнопки удаления
+    private readonly indexSelector: string = '.basket__item-index';   
+    private readonly deleteButtonSelector: string = '.basket__item-delete'; 
 
     constructor() {
         this.cardBasketTemplate = ensureElement('#card-basket') as HTMLTemplateElement;
     }
 
     /**
-     * Рендерит карточку товара в заданный элемент DOM.
+     * Генерирует DOM-представление отдельного товара в корзине.
      *
      * @param product - объект товарной позиции
-     * @param container - контейнер, куда добавить карточку
      * @param onRemoveClick - колбэк удаления товара
+     * @return Готовое DOM-представление
      */
-    render(product: IBasketItem, container: HTMLElement, onRemoveClick: (id: string) => void): void {
+    create(product: IBasketItem, onRemoveClick: (id: string) => void): HTMLElement {
         const itemClone = cloneTemplate(this.cardBasketTemplate) as HTMLLIElement;
 
-        // Используется ensureElement для нахождения внутренних элементов в пределах itemClone
+        // Используем ensureElement для нахождения внутренних элементов в пределах itemClone
         const indexSpan = ensureElement(this.indexSelector, itemClone); 
         indexSpan.textContent = String(product.index ?? '');
 
-        // Наполнение карточки товарами
+        // Наполняем карточку товарами
         Card.fillProductCard(itemClone, product, '', {}, { skipCategory: true, skipImage: true });
 
         // Кнопка удаления
         const delBtn = ensureElement(this.deleteButtonSelector, itemClone); 
         delBtn.addEventListener('click', () => onRemoveClick(product.id));
 
-        // Добавляем карточку в родительский контейнер
-        container.appendChild(itemClone);
+        return itemClone;
     }
 }

@@ -13,6 +13,7 @@ import {ContactsView} from './components/ContactsView';
 import {SuccessView} from './components/SuccessView';
 import {BasketModel} from './components/BasketModel';
 import {FormModel} from './components/FormModel';
+import {BasketItemView} from './components/BasketItemView'; // импортируем представленный класс
 
 import './scss/styles.scss';
 
@@ -29,9 +30,11 @@ const modal = Modal.getInstance('#modal-container');
 const card = new Card(CDN_URL, events, colorsCategory);
 const cardView = CardView.getInstance(events, CDN_URL, colorsCategory);
 const basketView = BasketView.getInstance(events);
+const basketItemView = new BasketItemView(); 
 const orderView = OrderView.getInstance(events);
 const contactsView = ContactsView.getInstance(events);
 const successView = SuccessView.getInstance(events);
+
 
 // API-клиент
 const api = new Api(API_URL);
@@ -53,11 +56,14 @@ events.on('open-product-modal', (product: IProduct) => {
 
 // Открытие корзины
 events.on('open-basket', () => {
+    const items = basketModel.items.map(product => {
+        return basketItemView.create(product, basketModel.remove.bind(basketModel)); // используем созданный ранее экземпляр
+    });
+
     modal.content = basketView.render(
-        basketModel.items,
+        items,
         basketModel.emptyMessage,
-        basketModel.totalPrice,
-        basketModel.remove.bind(basketModel)
+        basketModel.totalPrice
     );
     modal.open();
 });
@@ -72,12 +78,16 @@ events.on('add-to-basket', (product: IProduct) => {
 // Удаление товара из корзины
 events.on('remove-from-basket', ({ pid }: { pid: string }) => {
     basketModel.remove(pid); 
-    modal.content = basketView.render(                 
-        basketModel.items,
+    const items = basketModel.items.map(product => {
+        return basketItemView.create(product, basketModel.remove.bind(basketModel));
+    });
+
+    modal.content = basketView.render(
+        items,
         basketModel.emptyMessage,
-        basketModel.totalPrice,
-        basketModel.remove.bind(basketModel)
+        basketModel.totalPrice
     );
+
     basketView.updateBasketCounter(basketModel.totalItems); 
 });
 

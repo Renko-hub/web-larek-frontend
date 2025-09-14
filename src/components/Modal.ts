@@ -6,50 +6,54 @@ export class Modal {
     private static instance: Modal | null = null;
     private modalElement: HTMLElement | null = null;
     private contentContainer: HTMLElement | null = null;
-    private _isOpen: boolean = false;
+    private isOpen: boolean = false;
 
-    // Создание экземпляра модального окна и установка слушателей событий
+    // Создание единственного экземпляра модального окна
     constructor(containerId: string) {
         this.modalElement = ensureElement(containerId, document.body);
         this.contentContainer = ensureElement('.modal__content', this.modalElement);
-        const closeBtn = ensureElement('.modal__close', this.modalElement);
-        closeBtn!.onclick = () => this.close();
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
-        document.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        const closeBtn = ensureElement('.modal__close', this.modalElement)!;
+        closeBtn.onclick = () => this.close(); // Обработчик кнопки закрытия
     }
 
-    // Возвращает единственный экземпляр модального окна
+    // Получаем экземпляр модального окна
     static getInstance(containerId: string): Modal {
         return Modal.instance || (Modal.instance = new Modal(containerId));
     }
 
-    // Устанавливает содержимое модального окна
+    // Установка содержимого модального окна
     set content(value: HTMLElement | null) {
         value && this.contentContainer && (this.contentContainer.innerHTML = '', this.contentContainer.appendChild(value));
     }
 
     // Открывает модальное окно
     open(): void {
-        this.modalElement && !this._isOpen && (this.modalElement.classList.add('modal_active'), this._isOpen = true);
+        if (!this.isOpen && this.modalElement) {
+            this.modalElement.classList.add('modal_active');
+            this.isOpen = true;
+            document.addEventListener('keydown', this.handleKeyDown.bind(this)); // Esc закрывает модал
+            document.addEventListener('mousedown', this.handleMouseDown.bind(this)); // Клик вне зоны закрывает модал
+        }
     }
 
     // Закрывает модальное окно
     close(): void {
-        this.modalElement && this._isOpen && (this.modalElement.classList.remove('modal_active'), this._isOpen = false);
+        if (this.isOpen && this.modalElement) {
+            this.modalElement.classList.remove('modal_active');
+            this.isOpen = false;
+            document.removeEventListener('keydown', this.handleKeyDown.bind(this));
+            document.removeEventListener('mousedown', this.handleMouseDown.bind(this));
+        }
     }
 
-    // Обработчик нажатия клавиши Escape для закрытия модала
+    // Нажатие Esc вызывает закрытие модала
     handleKeyDown(event: KeyboardEvent): void {
-        event.key === 'Escape' && this._isOpen && this.close();
+        event.key === 'Escape' && this.close();
     }
 
-    // Обработчик щелчка мышью для закрытия модала при клике вне активной зоны
+    // Щелчок мыши вне активного элемента также закрывает модал
     handleMouseDown(event: MouseEvent): void {
         const target = event.target as Element;
-        this.modalElement &&
-          this._isOpen &&
-          !this.contentContainer?.contains(target) &&
-          target !== this.modalElement.querySelector('.modal__close') &&
-          this.close();
+        this.modalElement && this.isOpen && !(target instanceof Node && this.contentContainer?.contains(target)) && target !== this.modalElement.querySelector('.modal__close') && this.close();
     }
 }
