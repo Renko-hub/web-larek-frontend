@@ -13,7 +13,7 @@ import {ContactsView} from './components/ContactsView';
 import {SuccessView} from './components/SuccessView';
 import {BasketModel} from './components/BasketModel';
 import {FormModel} from './components/FormModel';
-import {BasketItemView} from './components/BasketItemView'; // импортируем представленный класс
+import {BasketItemView} from './components/BasketItemView'; 
 
 import './scss/styles.scss';
 

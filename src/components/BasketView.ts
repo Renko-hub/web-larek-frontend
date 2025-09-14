@@ -1,7 +1,6 @@
 // BasketView.ts
 
 import { cloneTemplate, ensureElement } from '../utils/utils';
-import { IBasketItem } from './BasketModel';
 
 /**
  * Представление корзины товаров.
