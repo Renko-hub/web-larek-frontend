@@ -15,17 +15,20 @@ export class BasketView {
     private currentContent: HTMLElement | null = null;
 
     constructor(events: any) {
-        this.events = events;
-        this.headerBasketButton = ensureElement('.header__basket');
-        this.basketCounter = ensureElement('.header__basket-counter');
-        this.basketTemplate = ensureElement('#basket') as HTMLTemplateElement;
-        this.basketCard = cloneTemplate(this.basketTemplate);
-        this.basketList = ensureElement('.basket__list', this.basketCard);
-        this.basketTotalPrice = ensureElement('.basket__price', this.basketCard);
-        this.checkoutButton = ensureElement('.basket__button', this.basketCard) as HTMLButtonElement;
+    this.events = events;
+    this.headerBasketButton = ensureElement('.header__basket');
+    this.basketCounter = ensureElement('.header__basket-counter');
+    this.basketTemplate = ensureElement('#basket') as HTMLTemplateElement;
+    this.basketCard = cloneTemplate(this.basketTemplate);
+    this.basketList = ensureElement('.basket__list', this.basketCard);
+    this.basketTotalPrice = ensureElement('.basket__price', this.basketCard);
+    this.checkoutButton = ensureElement('.basket__button', this.basketCard) as HTMLButtonElement;
 
-        // Присоединяем событие нажатия на иконку корзины
-        this.headerBasketButton?.addEventListener('click', () => this.events.emit('open-basket'));
+    // Присоединяем событие нажатия на иконку корзины
+    this.headerBasketButton?.addEventListener('click', () => this.events.emit('open-basket'));
+    
+    // Новый код для кнопки оформления заказа
+    this.checkoutButton?.addEventListener('click', () => this.events.emit('open-order'));
     }
 
     static getInstance(events: any): BasketView {

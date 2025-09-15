@@ -10,6 +10,12 @@ export class CardView {
     private readonly colorsCategory: Record<string, string>;
     private readonly events: any;
     private readonly previewTemplate: HTMLTemplateElement;
+    private readonly categorySelector: string = '.card__category';
+    private readonly titleSelector: string = '.card__title';
+    private readonly imageSelector: string = '.card__image';
+    private readonly priceSelector: string = '.card__price';
+    private readonly textSelector: string = '.card__text';
+    private readonly buttonSelector: string = '.card__button';
 
     private constructor(events: any, cdnUrl: string, colorsCategory: Record<string, string>) {
         this.events = events;
@@ -25,44 +31,44 @@ export class CardView {
     render(product: IProduct, onAddToBasket: (p: IProduct) => void, onRemoveFromBasket: (id: string) => void, isInBasket: boolean): HTMLElement {
         const card = cloneTemplate(this.previewTemplate);
     
-        // Устанавливаем категорию товара
-        const categoryEl = ensureElement('.card__category', card);
+        // Определяем категории и классы элемента
+        const categoryEl = ensureElement(this.categorySelector, card);
         if (categoryEl && product.category) {
             categoryEl.classList.remove(...Object.values(this.colorsCategory));
             categoryEl.classList.add(this.colorsCategory[product.category]);
             categoryEl.textContent = product.category;
         }
 
-        // Устанавливаем название товара
-        const titleEl = ensureElement('.card__title', card);
+        // Название товара
+        const titleEl = ensureElement(this.titleSelector, card);
         if (titleEl && product.title) titleEl.textContent = product.title;
 
-        // Устанавливаем изображение товара
-        const imgEl = ensureElement('.card__image', card) as HTMLImageElement;
+        // Изображение товара
+        const imgEl = ensureElement(this.imageSelector, card) as HTMLImageElement;
         if (imgEl && product.image) imgEl.src = `${this.cdnUrl}/${product.image}`;
 
-        // Устанавливаем цену товара (готовая строка из модели)
-        const priceEl = ensureElement('.card__price', card);
+        // Цена товара
+        const priceEl = ensureElement(this.priceSelector, card);
         if (priceEl && product.displayText) priceEl.textContent = product.displayText;
 
-        // Устанавливаем описание товара
-        const descriptionEl = ensureElement('.card__text', card);
+        // Описание товара
+        const descriptionEl = ensureElement(this.textSelector, card);
         if (descriptionEl && product.description) descriptionEl.textContent = product.description;
 
-        // Настраиваем кнопку добавления / удаления из корзины
-        const buttonEl = ensureElement('.card__button', card)!;
+        // Кнопка добавляет или удаляет товар из корзины
+        const buttonEl = ensureElement(this.buttonSelector, card)!;
         buttonEl.onclick = () => {
             if (isInBasket) {
-                onRemoveFromBasket(product.id); // Если товар уже в корзине, удаляем его
+                onRemoveFromBasket(product.id); // Удаление из корзины
             } else {
-                onAddToBasket(product); // Иначе добавляем товар в корзину
+                onAddToBasket(product); // Добавление в корзину
             }
-            this.events.emit('close-card-modal'); // Закрываем окно карты товара
+            this.events.emit('close-card-modal');
         };
 
-        // Меняем надпись на кнопке в зависимости от состояния корзины
+        // Надпись кнопки зависит от наличия товара в корзине
         if (isInBasket) {
-            buttonEl.textContent = 'Удалить из корзины'; // Если товар в корзине, кнопка должна удалять
+            buttonEl.textContent = 'Удалить из корзины';
         }
 
         return card;

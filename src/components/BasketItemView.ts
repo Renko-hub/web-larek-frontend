@@ -5,6 +5,10 @@ import { IBasketItem } from './BasketModel';
 
 export class BasketItemView {
     private readonly basketTemplate: HTMLTemplateElement;
+    private readonly indexSelector: string = '.basket__item-index';
+    private readonly titleSelector: string = '.card__title';
+    private readonly priceSelector: string = '.card__price';
+    private readonly deleteButtonSelector: string = '.basket__item-delete';
 
     constructor() {
         this.basketTemplate = ensureElement('#card-basket') as HTMLTemplateElement;
@@ -12,21 +16,18 @@ export class BasketItemView {
 
     create(product: IBasketItem, onRemoveClick: (id: string) => void): HTMLElement {
         const itemClone = cloneTemplate(this.basketTemplate) as HTMLLIElement;
-
-        // Устанавливаем порядковый номер товара
-        const indexSpan = ensureElement('.basket__item-index', itemClone);
+        
+        // Используем заранее заданные селекторы для элементов
+        const indexSpan = ensureElement(this.indexSelector, itemClone);
         indexSpan.textContent = String(product.index ?? '');
 
-        // Устанавливаем название товара
-        const titleEl = ensureElement('.card__title', itemClone);
+        const titleEl = ensureElement(this.titleSelector, itemClone);
         if (titleEl) titleEl.textContent = product.title;
 
-        // Установим цену товара, используя готовую строку из модели
-        const priceEl = ensureElement('.card__price', itemClone);
+        const priceEl = ensureElement(this.priceSelector, itemClone);
         if (priceEl && product.displayText) priceEl.textContent = product.displayText;
 
-        // Назначаем обработчик события удаления товара из корзины
-        const delBtn = ensureElement('.basket__item-delete', itemClone);
+        const delBtn = ensureElement(this.deleteButtonSelector, itemClone);
         delBtn.addEventListener('click', () => onRemoveClick(product.id));
 
         return itemClone;
