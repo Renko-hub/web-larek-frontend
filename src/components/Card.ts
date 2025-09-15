@@ -3,54 +3,28 @@
 import { cloneTemplate, ensureElement } from '../utils/utils';
 import { IProduct } from './ProductModel';
 
-/**
- * Компонент представления карточек товаров.
- */
 export class Card {
-    private readonly _cdnUrl: string; // URL для изображений товаров
-    private readonly _events: any; // События приложения
-    private readonly _colorsCategory: Record<string, string>; // Цветовая палитра категорий товаров
-    private galleryContainer: HTMLElement; // Контейнер галереи товаров
+    private readonly _cdnUrl: string;
+    private readonly _events: any;
+    private readonly _colorsCategory: Record<string, string>;
 
     constructor(cdnUrl: string, events: any, colorsCategory: Record<string, string>) {
         this._cdnUrl = cdnUrl;
         this._events = events;
         this._colorsCategory = colorsCategory;
-        this.galleryContainer = ensureElement('.gallery');
     }
 
-    // Рендеринг набора товаров на странице
-    renderProducts(products: IProduct | IProduct[]): void {
-        this.galleryContainer.innerHTML = ''; // Очищаем контейнер перед рендером
-        const items = Array.isArray(products) ? products : [products];
-        for (const prod of items) {
-            const card = Card.renderProductCard(this._cdnUrl, prod, this._events, this._colorsCategory);
-            this.galleryContainer.appendChild(card); // Добавляем новую карточку
-        }
-    }
-
-    // Статический метод рендера отдельной карточки товара
-    static renderProductCard(
-        cdnUrl: string,
-        product: IProduct,
-        events: any,
-        colorsCategory: Record<string, string>,
-    ): HTMLElement {
+    // Создаёт и возвращает элемент карточки товара
+    render(product: IProduct): HTMLElement {
         const template = ensureElement('#card-catalog') as HTMLTemplateElement;
         const card = cloneTemplate(template);
-        Card.fillProductCard(card, product, cdnUrl, colorsCategory);
-        card.addEventListener('click', () => events.emit('open-product-modal', product));
+        Card.fillProductCard(card, product, this._cdnUrl, this._colorsCategory);
+        card.addEventListener('click', () => this._events.emit('open-product-modal', product));
         return card;
     }
 
-    // Заполнение свойств карточки товара
-    static fillProductCard(
-        element: HTMLElement,
-        product: Partial<IProduct>,
-        cdnUrl: string,
-        colorsCategory: Record<string, string>,
-        opts: { skipCategory?: boolean; skipImage?: boolean } = {},
-    ): void {
+    // Заполняет поля карточки
+    static fillProductCard(element: HTMLElement, product: Partial<IProduct>, cdnUrl: string, colorsCategory: Record<string, string>, opts: { skipCategory?: boolean; skipImage?: boolean } = {}) {
         const { category, title, image, price } = product;
         if (!opts.skipCategory && category) {
             const catEl = ensureElement('.card__category', element);

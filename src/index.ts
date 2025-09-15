@@ -1,5 +1,4 @@
-// index.ts
-
+// presenter.ts
 import {Api, ApiListResponse} from './components/base/api';
 import {API_URL, CDN_URL, colorsCategory} from './utils/constants';
 import {IProduct, ProductsModel} from './components/ProductModel';
@@ -13,7 +12,8 @@ import {ContactsView} from './components/ContactsView';
 import {SuccessView} from './components/SuccessView';
 import {BasketModel} from './components/BasketModel';
 import {FormModel} from './components/FormModel';
-import {BasketItemView} from './components/BasketItemView'; 
+import {BasketItemView} from './components/BasketItemView';
+import {Page} from './components/Page';
 
 import './scss/styles.scss';
 
@@ -25,27 +25,32 @@ const productModel = new ProductsModel(events);
 const basketModel = new BasketModel(events);
 const formModel = new FormModel(events);
 
-// Элементы отображения
+// Компоненты представления
 const modal = Modal.getInstance('#modal-container');
 const card = new Card(CDN_URL, events, colorsCategory);
 const cardView = CardView.getInstance(events, CDN_URL, colorsCategory);
 const basketView = BasketView.getInstance(events);
-const basketItemView = new BasketItemView(); 
+const basketItemView = new BasketItemView();
 const orderView = OrderView.getInstance(events);
 const contactsView = ContactsView.getInstance(events);
 const successView = SuccessView.getInstance(events);
 
+// Новое: внедряем компонент Page
+const page = new Page(card);
 
 // API-клиент
 const api = new Api(API_URL);
 
-// Загружаем товары
-api.get('/product')
-    .then((response: ApiListResponse<IProduct>) => {
-        productModel.set(response.items || []);
-        card.renderProducts(productModel.get());
-    })
-    .catch(() => alert('Ошибка загрузки товаров.'));
+// Загрузка товаров с сервера
+api.get('/product').then((response: ApiListResponse<IProduct>) => {
+    productModel.set(response.items || []);
+}).catch(() => alert('Ошибка загрузки товаров.'));
+
+// Отображение товаров
+events.on('products:show', () => {
+    const products = productModel.get();
+    page.renderProducts(products);
+});
 
 // Открытие карточки товара
 events.on('open-product-modal', (product: IProduct) => {
@@ -54,41 +59,20 @@ events.on('open-product-modal', (product: IProduct) => {
     modal.open();
 });
 
+// Изменение корзины
+events.on('basket:change', () => {
+    const items = basketModel.items.map(product => basketItemView.create(product, basketModel.remove.bind(basketModel)));
+    modal.content = basketView.render(items, basketModel.emptyMessage, basketModel.totalPrice);
+    modal.open();
+    basketView.updateBasketCounter(basketModel.totalItems);
+});
+
 // Открытие корзины
 events.on('open-basket', () => {
-    const items = basketModel.items.map(product => {
-        return basketItemView.create(product, basketModel.remove.bind(basketModel)); // используем созданный ранее экземпляр
-    });
-
-    modal.content = basketView.render(
-        items,
-        basketModel.emptyMessage,
-        basketModel.totalPrice
-    );
+    const items = basketModel.items.map(product => basketItemView.create(product, basketModel.remove.bind(basketModel)));
+    modal.content = basketView.render(items, basketModel.emptyMessage, basketModel.totalPrice);
     modal.open();
-});
-
-// Добавление товара в корзину
-events.on('add-to-basket', (product: IProduct) => {
-    basketModel.add(product);
     basketView.updateBasketCounter(basketModel.totalItems);
-    modal.close();
-});
-
-// Удаление товара из корзины
-events.on('remove-from-basket', ({ pid }: { pid: string }) => {
-    basketModel.remove(pid); 
-    const items = basketModel.items.map(product => {
-        return basketItemView.create(product, basketModel.remove.bind(basketModel));
-    });
-
-    modal.content = basketView.render(
-        items,
-        basketModel.emptyMessage,
-        basketModel.totalPrice
-    );
-
-    basketView.updateBasketCounter(basketModel.totalItems); 
 });
 
 // Оформление заказа
@@ -100,7 +84,7 @@ events.on('open-order', () => {
     formModel.isValidOrder();
 });
 
-// Форма доставки
+// Адрес доставки
 events.on('change:address', ({address}: {address: string}) => {
     formModel.setAddress(address);
     formModel.isValidOrder();
@@ -112,7 +96,7 @@ events.on('change:paymentMethod', ({paymentMethod}: {paymentMethod: string}) => 
     formModel.isValidOrder();
 });
 
-// Контакты
+// Страница контактов
 events.on('open-contacts', () => {
     modal.content = contactsView.render();
     modal.open();
@@ -120,7 +104,7 @@ events.on('open-contacts', () => {
     formModel.isValidContacts();
 });
 
-// Email
+// E-mail
 events.on('change:email', ({email}: {email: string}) => {
     formModel.setEmail(email);
     formModel.isValidContacts();
@@ -132,32 +116,32 @@ events.on('change:phone', ({phone}: {phone: string}) => {
     formModel.isValidContacts();
 });
 
-// Валидность формы заказа
+// Проверка формы заказа
 events.on('form:valid-order', () => {
     orderView.toggleNextButton(true);
     orderView.hideError();
 });
 
-// Ошибки формы заказа
+// Ошибка формы заказа
 events.on('form:order-errors', () => {
     orderView.handleFormErrors(formModel.validationErrors);
     orderView.toggleNextButton(false);
 });
 
-// Валидные контактные данные
+// Проверка контактных данных
 events.on('form:valid-contacts', () => {
     contactsView.toggleNextButton(true);
     contactsView.hideError('email');
     contactsView.hideError('phone');
 });
 
-// Ошибки контактных данных
+// Ошибка контактных данных
 events.on('form:contacts-errors', () => {
     contactsView.handleFormErrors(formModel.validationErrors);
     contactsView.toggleNextButton(false);
 });
 
-// Завершение заказа
+// Отправка заказа
 events.on('open-success', async () => {
     const data = {
         id: Date.now(),
@@ -170,22 +154,21 @@ events.on('open-success', async () => {
     };
 
     try {
-        // Отправляем заказ, игнорируя ответ сервера
-        await api.post('/order', data);
-    
-        modal.content = successView.render(data.total);
-        modal.open();
+        await api.post('/order', data); // Отправляем заказ на сервер
+        
         basketModel.clearBasket();
         basketView.updateBasketCounter(basketModel.totalItems);
         formModel.reset();
+
+        modal.content = successView.render(data.total);
+        modal.open();
     } catch (err) {
         alert('Ошибка при отправке заказа. Попробуйте снова позже.');
-        console.error('Ошибка отправки заказа:', err.message);
     }
 });
 
-// Закрыть окно карточек
+// Закрытие окна карточек
 events.on('close-card-modal', () => modal.close());
 
-// Закрыть окно успеха
+// Закрытие окна успеха
 events.on('close-success', () => modal.close());

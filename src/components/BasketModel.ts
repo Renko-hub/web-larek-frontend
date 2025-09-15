@@ -21,24 +21,22 @@ export class BasketModel {
 
     // Общая сумма корзины
     get totalPrice(): number {
-        return [...this.basket.values()].reduce((sum, item) => sum + item.price * item.quantity, 0);
+        return Array.from(this.basket.values()).reduce((sum, item) => sum + item.price * item.quantity, 0);
     }
 
     // Общее количество товаров в корзине
     get totalItems(): number {
-        return [...this.basket.values()].reduce((acc, item) => acc + item.quantity, 0);
+        return Array.from(this.basket.values()).reduce((acc, item) => acc + item.quantity, 0);
     }
 
     // Список товаров в корзине
     get items(): IBasketItem[] {
-        return [...this.basket.values()];
+        return Array.from(this.basket.values());
     }
 
     // Вернуть список товаров для отправки на сервер
     getSendableItems(): IBasketItem[] {
-        return [...this.basket.values()]
-            .filter(item => item.price > 0)
-            .map(item => ({...item}));
+        return this.items.filter(item => item.price > 0).map(item => ({...item}));
     }
 
     // Сообщение, показываемое при пустой корзине
@@ -65,22 +63,26 @@ export class BasketModel {
         if (this.basket.has(product.id)) return;
         this.basket.set(product.id, {...product, quantity: 1}); // Новый товар добавляется с количеством 1
         this.updateIndexes(); // Переназначаем индексы после добавления товара
-        this.events.emit('add-to-basket', product); // Отправляем событие добавления товара
+        this.events.emit('basket:change'); // событие добавления
     }
 
     // Удаляет товар из корзины
     remove(productId: string): void {
         let item = this.basket.get(productId);
-        if (item) {
-            item.quantity > 1 ? item.quantity-- : this.basket.delete(productId); // Уменьшаем количество или удаляем товар
-            this.updateIndexes(); // Переназначаем индексы после удаления товара
-            this.events.emit('remove-from-basket', { productId }); // Отправляем событие удаления товара
+        if (item && item.quantity > 1) {
+            item.quantity--;
+        } else {
+            this.basket.delete(productId);
         }
+        this.updateIndexes(); // Переназначаем индексы после удаления товара
+        this.events.emit('basket:change'); // событие удаления
     }
 
     // Полностью очищает корзину
     clearBasket(): void {
-        this.basket.clear();
-        this.events.emit('basket-clear'); // Уведомляем систему о чистке корзины
+        if (this.basket.size > 0) {
+            this.basket.clear();
+            this.events.emit('basket:change');
+        }
     }
 }
