@@ -2,11 +2,7 @@
 
 import { cloneTemplate, ensureElement } from '../utils/utils';
 import { IProduct } from './ProductModel';
-import { Card } from './Card'; // Импортируем класс Card целиком
 
-/**
- * Представление детализированной карточки товара.
- */
 export class CardView {
     private static instance: CardView | null = null;
 
@@ -14,53 +10,61 @@ export class CardView {
     private readonly colorsCategory: Record<string, string>;
     private readonly events: any;
     private readonly previewTemplate: HTMLTemplateElement;
-    private readonly cardTextSelector: string = '.card__text';
-    private readonly cardButtonSelector: string = '.card__button';
 
     private constructor(events: any, cdnUrl: string, colorsCategory: Record<string, string>) {
         this.events = events;
         this.cdnUrl = cdnUrl;
         this.colorsCategory = colorsCategory;
         this.previewTemplate = ensureElement('#card-preview') as HTMLTemplateElement;
-        if (!this.previewTemplate) throw new Error("Шаблон #card-preview не найден");
     }
 
-    // Получение единственного экземпляра компонента
     static getInstance(events: any, cdnUrl: string, colorsCategory: Record<string, string>): CardView {
         return CardView.instance || (CardView.instance = new CardView(events, cdnUrl, colorsCategory));
     }
 
-    /**
-     * Отображает карточку товара в модальном окне.
-     */
     render(product: IProduct, onAddToBasket: (p: IProduct) => void, onRemoveFromBasket: (id: string) => void, isInBasket: boolean): HTMLElement {
         const card = cloneTemplate(this.previewTemplate);
-        Card.fillProductCard(card, product, this.cdnUrl, this.colorsCategory); // Правильно вызван статический метод
-
-        const textEl = ensureElement(this.cardTextSelector, card);
-        if (textEl && product.description) textEl.textContent = product.description;
     
-        const btn = ensureElement(this.cardButtonSelector, card)!;
-        btn.onclick = () => {
+        // Устанавливаем категорию товара
+        const categoryEl = ensureElement('.card__category', card);
+        if (categoryEl && product.category) {
+            categoryEl.classList.remove(...Object.values(this.colorsCategory));
+            categoryEl.classList.add(this.colorsCategory[product.category]);
+            categoryEl.textContent = product.category;
+        }
+
+        // Устанавливаем название товара
+        const titleEl = ensureElement('.card__title', card);
+        if (titleEl && product.title) titleEl.textContent = product.title;
+
+        // Устанавливаем изображение товара
+        const imgEl = ensureElement('.card__image', card) as HTMLImageElement;
+        if (imgEl && product.image) imgEl.src = `${this.cdnUrl}/${product.image}`;
+
+        // Устанавливаем цену товара (готовая строка из модели)
+        const priceEl = ensureElement('.card__price', card);
+        if (priceEl && product.displayText) priceEl.textContent = product.displayText;
+
+        // Устанавливаем описание товара
+        const descriptionEl = ensureElement('.card__text', card);
+        if (descriptionEl && product.description) descriptionEl.textContent = product.description;
+
+        // Настраиваем кнопку добавления / удаления из корзины
+        const buttonEl = ensureElement('.card__button', card)!;
+        buttonEl.onclick = () => {
             if (isInBasket) {
-                onRemoveFromBasket(product.id);
+                onRemoveFromBasket(product.id); // Если товар уже в корзине, удаляем его
             } else {
-                onAddToBasket(product);
+                onAddToBasket(product); // Иначе добавляем товар в корзину
             }
-            this.events.emit('close-card-modal');
+            this.events.emit('close-card-modal'); // Закрываем окно карты товара
         };
-    
-        if (isInBasket) btn.textContent = 'Удалить из корзины';
-    
-        return card;
-    }
 
-    /**
-     * Генерирует базовую карточку товара без привязанных событий.
-     */
-    createBaseCardWithoutEvents(product: IProduct): HTMLElement {
-        const card = cloneTemplate(this.previewTemplate);
-        Card.fillProductCard(card, product, this.cdnUrl, this.colorsCategory); // Правильно вызван статический метод
+        // Меняем надпись на кнопке в зависимости от состояния корзины
+        if (isInBasket) {
+            buttonEl.textContent = 'Удалить из корзины'; // Если товар в корзине, кнопка должна удалять
+        }
+
         return card;
     }
 }

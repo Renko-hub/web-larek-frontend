@@ -1,4 +1,5 @@
 // presenter.ts
+
 import {Api, ApiListResponse} from './components/base/api';
 import {API_URL, CDN_URL, colorsCategory} from './utils/constants';
 import {IProduct, ProductsModel} from './components/ProductModel';

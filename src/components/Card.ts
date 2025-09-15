@@ -14,35 +14,39 @@ export class Card {
         this._colorsCategory = colorsCategory;
     }
 
-    // Создаёт и возвращает элемент карточки товара
     render(product: IProduct): HTMLElement {
+        // Получаем шаблон карточки товара
         const template = ensureElement('#card-catalog') as HTMLTemplateElement;
+        // Создаем копию шаблона
         const card = cloneTemplate(template);
-        Card.fillProductCard(card, product, this._cdnUrl, this._colorsCategory);
+        // Заполняем поля карточки
+        Card.populateCardDetails(card, product, this._cdnUrl, this._colorsCategory);
+        // Подключаем событие клика на открытие модала
         card.addEventListener('click', () => this._events.emit('open-product-modal', product));
         return card;
     }
 
-    // Заполняет поля карточки
-    static fillProductCard(element: HTMLElement, product: Partial<IProduct>, cdnUrl: string, colorsCategory: Record<string, string>, opts: { skipCategory?: boolean; skipImage?: boolean } = {}) {
-        const { category, title, image, price } = product;
-        if (!opts.skipCategory && category) {
-            const catEl = ensureElement('.card__category', element);
-            if (catEl) {
-                catEl.classList.remove(...Object.values(colorsCategory));
-                catEl.classList.add(colorsCategory[category]);
-                catEl.textContent = category;
-            }
+    static populateCardDetails(element: HTMLElement, product: Partial<IProduct>, cdnUrl: string, colorsCategory: Record<string, string>) {
+        const { category, title, image, displayText } = product;
+
+        // Устанавливаем категорию товара
+        const catEl = ensureElement('.card__category', element);
+        if (catEl && category) {
+            catEl.classList.remove(...Object.values(colorsCategory));
+            catEl.classList.add(colorsCategory[category]);
+            catEl.textContent = category;
         }
+
+        // Устанавливаем заголовок товара
         const titleEl = ensureElement('.card__title', element);
         if (titleEl && title) titleEl.textContent = title;
-        if (!opts.skipImage && image) {
-            const imgEl = ensureElement('.card__image', element) as HTMLImageElement;
-            if (imgEl) imgEl.src = `${cdnUrl}/${image}`;
-        }
+
+        // Устанавливаем картинку товара
+        const imgEl = ensureElement('.card__image', element) as HTMLImageElement;
+        if (imgEl && image) imgEl.src = `${cdnUrl}/${image}`;
+
+        // Теперь используем готовую строку цены из модели
         const priceEl = ensureElement('.card__price', element);
-        if (priceEl && typeof price !== 'undefined') {
-            priceEl.textContent = typeof price === 'number' ? `${price} синапсов` : 'Бесплатно';
-        }
+        if (priceEl && displayText) priceEl.textContent = displayText;
     }
 }

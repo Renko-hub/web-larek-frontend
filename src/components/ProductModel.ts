@@ -7,30 +7,35 @@ export interface IProduct {
     title: string;
     category: string;
     image: string;
-    price: number;
+    price: number | null; // Допускаем также null-значение
     quantity?: number;
     description?: string;
+    displayText?: string; // Готовый текст для отображения цены
 }
 
 /**
  * Модель хранения продуктов магазина.
  */
 export class ProductsModel {
-    private _products: IProduct[] = []; // Внутреннее хранилище списка продуктов
-    protected readonly events: IEvents; // Объект системы событий для уведомления компонентов
+    private _products: IProduct[] = [];
+    protected readonly events: IEvents;
 
     constructor(events: IEvents) {
         this.events = events;
     }
 
-    // Установка массива продуктов
     set(products: IProduct[]) {
-        this._products = products;
-        this.events.emit('products:show'); // Уведомляет систему о готовности показать продукты
+        this._products = products.map(product => ({
+            ...product,
+            displayText: product.displayText ||
+                         (typeof product.price === 'number' && product.price > 0 ?
+                          `${product.price} синапсов` :
+                          'Бесплатно'), // Если цена равна нулю или отсутствует, ставим "Бесплатно"
+        }));
+        this.events.emit('products:show');
     }
 
-    // Возврат копии внутреннего массива продуктов
     get(): IProduct[] {
-        return this._products.slice(); // Возвращается копия массива, чтобы предотвратить прямое изменение
+        return this._products.slice();
     }
 }

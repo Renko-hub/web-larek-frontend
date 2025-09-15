@@ -2,39 +2,31 @@
 
 import { cloneTemplate, ensureElement } from '../utils/utils';
 import { IBasketItem } from './BasketModel';
-import { Card } from './Card';
 
-/**
- * Представление отдельной строки товара в корзине.
- */
 export class BasketItemView {
-    private readonly cardBasketTemplate: HTMLTemplateElement;
-    private readonly indexSelector: string = '.basket__item-index';   
-    private readonly deleteButtonSelector: string = '.basket__item-delete'; 
+    private readonly basketTemplate: HTMLTemplateElement;
 
     constructor() {
-        this.cardBasketTemplate = ensureElement('#card-basket') as HTMLTemplateElement;
+        this.basketTemplate = ensureElement('#card-basket') as HTMLTemplateElement;
     }
 
-    /**
-     * Генерирует DOM-представление отдельного товара в корзине.
-     *
-     * @param product - объект товарной позиции
-     * @param onRemoveClick - колбэк удаления товара
-     * @return Готовое DOM-представление
-     */
     create(product: IBasketItem, onRemoveClick: (id: string) => void): HTMLElement {
-        const itemClone = cloneTemplate(this.cardBasketTemplate) as HTMLLIElement;
+        const itemClone = cloneTemplate(this.basketTemplate) as HTMLLIElement;
 
-        // Используем ensureElement для нахождения внутренних элементов в пределах itemClone
-        const indexSpan = ensureElement(this.indexSelector, itemClone); 
+        // Устанавливаем порядковый номер товара
+        const indexSpan = ensureElement('.basket__item-index', itemClone);
         indexSpan.textContent = String(product.index ?? '');
 
-        // Наполняем карточку товарами
-        Card.fillProductCard(itemClone, product, '', {}, { skipCategory: true, skipImage: true });
+        // Устанавливаем название товара
+        const titleEl = ensureElement('.card__title', itemClone);
+        if (titleEl) titleEl.textContent = product.title;
 
-        // Кнопка удаления
-        const delBtn = ensureElement(this.deleteButtonSelector, itemClone); 
+        // Установим цену товара, используя готовую строку из модели
+        const priceEl = ensureElement('.card__price', itemClone);
+        if (priceEl && product.displayText) priceEl.textContent = product.displayText;
+
+        // Назначаем обработчик события удаления товара из корзины
+        const delBtn = ensureElement('.basket__item-delete', itemClone);
         delBtn.addEventListener('click', () => onRemoveClick(product.id));
 
         return itemClone;
