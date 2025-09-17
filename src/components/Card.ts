@@ -8,14 +8,6 @@ export class Card {
     private readonly _events: any;
     private readonly _colorsCategory: Record<string, string>;
 
-    // Объект для ссылок на элементы DOM
-    private elements: {
-        category: HTMLElement | null;
-        title: HTMLElement | null;
-        image: HTMLImageElement | null;
-        price: HTMLElement | null;
-    };
-
     constructor(cdnUrl: string, events: any, colorsCategory: Record<string, string>) {
         this._cdnUrl = cdnUrl;
         this._events = events;
@@ -23,44 +15,30 @@ export class Card {
     }
 
     render(product: IProduct): HTMLElement {
-        // Получаем шаблон карточки товара
         const template = ensureElement('#card-catalog') as HTMLTemplateElement;
-        // Создаем копию шаблона
         const card = cloneTemplate(template);
 
-        // Сохраняем ссылки на элементы DOM в объект
-        this.elements = {
-            category: ensureElement('.card__category', card),
-            title: ensureElement('.card__title', card),
-            image: ensureElement('.card__image', card) as HTMLImageElement,
-            price: ensureElement('.card__price', card)
-        };
-
-        // Заполняем поля карточки
-        this.populateCardDetails(product);
-
-        // Подключаем событие клика на открытие модала - не смог обойти проблему с добавлением в конструктор 
-        card.addEventListener('click', () => this._events.emit('open-product-modal', product));
-        return card;
-    }
-
-    private populateCardDetails(product: Partial<IProduct>): void {
-        const { category, title, image, displayText } = product;
-
         // Категория товара
-        if (this.elements.category && category) {
-            this.elements.category.classList.remove(...Object.values(this._colorsCategory));
-            this.elements.category.classList.add(this._colorsCategory[category]);
-            this.elements.category.textContent = category;
+        const categoryEl = ensureElement('.card__category', card);
+        if (categoryEl && product.category) {
+            categoryEl.classList.remove(...Object.values(this._colorsCategory));
+            categoryEl.classList.add(this._colorsCategory[product.category]);
+            categoryEl.textContent = product.category;
         }
 
-        // Заголовок товара
-        if (this.elements.title && title) this.elements.title.textContent = title;
+        // Название товара
+        ensureElement('.card__title', card).textContent = product.title;
 
         // Картинка товара
-        if (this.elements.image && image) this.elements.image.src = `${this._cdnUrl}/${image}`;
+        const imgEl = ensureElement('.card__image', card) as HTMLImageElement;
+        if (imgEl && product.image) imgEl.src = `${this._cdnUrl}/${product.image}`;
 
         // Цена товара
-        if (this.elements.price && displayText) this.elements.price.textContent = displayText;
+        ensureElement('.card__price', card).textContent = product.displayText;
+
+        // Открытие модального окна при нажатии на карточку
+        card.addEventListener('click', () => this._events.emit('open-product-modal', product));
+
+        return card;
     }
 }

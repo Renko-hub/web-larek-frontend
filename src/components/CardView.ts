@@ -10,14 +10,8 @@ export class CardView {
     private readonly colorsCategory: Record<string, string>;
     private readonly events: any;
     private readonly previewTemplate: HTMLTemplateElement;
-    private readonly categorySelector: string = '.card__category';
-    private readonly titleSelector: string = '.card__title';
-    private readonly imageSelector: string = '.card__image';
-    private readonly priceSelector: string = '.card__price';
-    private readonly textSelector: string = '.card__text';
-    private readonly buttonSelector: string = '.card__button';
 
-    private constructor(events: any, cdnUrl: string, colorsCategory: Record<string, string>) {
+    constructor(events: any, cdnUrl: string, colorsCategory: Record<string, string>) {
         this.events = events;
         this.cdnUrl = cdnUrl;
         this.colorsCategory = colorsCategory;
@@ -30,9 +24,9 @@ export class CardView {
 
     render(product: IProduct, onAddToBasket: (p: IProduct) => void, onRemoveFromBasket: (id: string) => void, isInBasket: boolean): HTMLElement {
         const card = cloneTemplate(this.previewTemplate);
-    
-        // Определяем категории и классы элемента
-        const categoryEl = ensureElement(this.categorySelector, card);
+
+        // Отображение категории товара
+        const categoryEl = ensureElement('.card__category', card);
         if (categoryEl && product.category) {
             categoryEl.classList.remove(...Object.values(this.colorsCategory));
             categoryEl.classList.add(this.colorsCategory[product.category]);
@@ -40,36 +34,27 @@ export class CardView {
         }
 
         // Название товара
-        const titleEl = ensureElement(this.titleSelector, card);
-        if (titleEl && product.title) titleEl.textContent = product.title;
+        ensureElement('.card__title', card).textContent = product.title;
 
         // Изображение товара
-        const imgEl = ensureElement(this.imageSelector, card) as HTMLImageElement;
+        const imgEl = ensureElement('.card__image', card) as HTMLImageElement;
         if (imgEl && product.image) imgEl.src = `${this.cdnUrl}/${product.image}`;
 
         // Цена товара
-        const priceEl = ensureElement(this.priceSelector, card);
-        if (priceEl && product.displayText) priceEl.textContent = product.displayText;
+        ensureElement('.card__price', card).textContent = product.displayText;
 
-        // Описание товара
-        const descriptionEl = ensureElement(this.textSelector, card);
-        if (descriptionEl && product.description) descriptionEl.textContent = product.description;
-
-        // Кнопка добавляет или удаляет товар из корзины
-        const buttonEl = ensureElement(this.buttonSelector, card)!;
+        // Кнопка покупки / удаления из корзины
+        const buttonEl = ensureElement('.card__button', card)!;
         buttonEl.onclick = () => {
             if (isInBasket) {
-                onRemoveFromBasket(product.id); // Удаление из корзины
+                onRemoveFromBasket(product.id);
             } else {
-                onAddToBasket(product); // Добавление в корзину
+                onAddToBasket(product);
             }
             this.events.emit('close-card-modal');
         };
 
-        // Надпись кнопки зависит от наличия товара в корзине
-        if (isInBasket) {
-            buttonEl.textContent = 'Удалить из корзины';
-        }
+        if (isInBasket) buttonEl.textContent = 'Удалить из корзины';
 
         return card;
     }

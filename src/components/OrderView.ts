@@ -7,10 +7,10 @@ import { cloneTemplate, ensureElement, createElement } from '../utils/utils';
  */
 export class OrderView {
     private static instance: OrderView | null = null;
-    private nextButton?: HTMLButtonElement; // Кнопка перехода к следующей стадии оформления
-    private errorSpan?: HTMLSpanElement; // Поле вывода ошибок формы
-    private addressField: HTMLInputElement; // Поле ввода адреса доставки
-    private buttonsGroup: NodeListOf<HTMLButtonElement>; // Группа кнопок выбора метода оплаты
+    private nextButton: HTMLButtonElement | undefined; // Кнопка перехода к следующей стадии оформления
+    private errorSpan: HTMLSpanElement | undefined; // Поле вывода ошибок формы
+    private addressField: HTMLInputElement | undefined; // Поле ввода адреса доставки
+    private buttonsGroup: NodeListOf<HTMLButtonElement> | undefined; // Группа кнопок выбора метода оплаты
 
     constructor(private events: any) {
         const orderCard = cloneTemplate(ensureElement('#order') as HTMLTemplateElement);
@@ -20,15 +20,15 @@ export class OrderView {
         this.errorSpan = createElement('span', 'order__error-message');
         this.addressField.after(this.errorSpan);
 
-        // Установка обработчиков событий тут же в конструкторе
-        this.buttonsGroup.forEach(button =>
+        // Установка обработчиков событий
+        this.buttonsGroup?.forEach(button => {
             button.addEventListener('click', () => {
-                this.buttonsGroup.forEach(b => b.classList.toggle('button_alt-active', b === button));
+                this.buttonsGroup?.forEach(b => b.classList.toggle('button_alt-active', b === button));
                 this.events.emit('change:paymentMethod', { paymentMethod: button.name });
-            })
-        );
+            });
+        });
 
-        this.addressField.addEventListener('input', event => {
+        this.addressField?.addEventListener('input', event => {
             const inputElement = event.target as HTMLInputElement;
             this.events.emit('change:address', { address: inputElement.value });
         });
@@ -46,13 +46,13 @@ export class OrderView {
 
     // Формирует представление формы заказа
     render(): HTMLElement {
-        return this.addressField.closest('form')!; // Возвращаем весь элемент формы
+        return this.addressField!.closest('form')!; // Возвращаем весь элемент формы
     }
 
     // Сброс состояния полей заказа
     resetState() {
-    this.addressField.value = '';
-    this.buttonsGroup.forEach(button => button.classList.remove('button_alt-active'));
+        this.addressField!.value = '';
+        this.buttonsGroup?.forEach(button => button.classList.remove('button_alt-active'));
     }
 
     // Обрабатывает ошибки формы заказа
@@ -75,7 +75,7 @@ export class OrderView {
             this.errorSpan.textContent = message,
             this.errorSpan.style.display = 'block'
         );
-    }   
+    }
 
     // Скрывает ошибку заполнения формы
     hideError(): void {

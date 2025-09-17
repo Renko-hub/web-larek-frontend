@@ -7,11 +7,11 @@ import { cloneTemplate, ensureElement, createElement } from '../utils/utils';
  */
 export class ContactsView {
     private static instance: ContactsView | null = null;
-    private nextButton?: HTMLButtonElement; // Кнопка завершения покупки
-    private emailErrorSpan?: HTMLSpanElement; // Поле вывода ошибок e-mail
-    private phoneErrorSpan?: HTMLSpanElement; // Поле вывода ошибок телефона
-    private emailField: HTMLInputElement; // Поле ввода e-mail
-    private phoneField: HTMLInputElement; // Поле ввода номера телефона
+    private nextButton: HTMLButtonElement | undefined; // Кнопка завершения покупки
+    private emailErrorSpan: HTMLSpanElement | undefined; // Поле вывода ошибок e-mail
+    private phoneErrorSpan: HTMLSpanElement | undefined; // Поле вывода ошибок телефона
+    private emailField: HTMLInputElement | undefined; // Поле ввода e-mail
+    private phoneField: HTMLInputElement | undefined; // Поле ввода номера телефона
 
     constructor(private events: any) {
         const contactsCard = cloneTemplate(ensureElement('#contacts') as HTMLTemplateElement);
@@ -32,24 +32,24 @@ export class ContactsView {
     // Формирует представление формы контактных данных
     render(): HTMLElement {
         // Обработка изменений поля e-mail
-        this.emailField.addEventListener('input', ({ target }) => this.events.emit('change:email', { email: (target as HTMLInputElement).value }));
+        this.emailField?.addEventListener('input', ({ target }) => this.events.emit('change:email', { email: (target as HTMLInputElement).value }));
 
         // Обработка изменений поля телефона
-        this.phoneField.addEventListener('input', ({ target }) => this.events.emit('change:phone', { phone: (target as HTMLInputElement).value }));
+        this.phoneField?.addEventListener('input', ({ target }) => this.events.emit('change:phone', { phone: (target as HTMLInputElement).value }));
 
         // Перенаправление на страницу успешного завершения покупки
-        this.nextButton.addEventListener('click', event => {
+        this.nextButton?.addEventListener('click', event => {
             this.events.emit('open-success');
             event.preventDefault();
         });
 
-        return this.emailField.closest('form')!; // Возвращаем весь элемент формы
+        return this.emailField!.closest('form')!; // Возвращаем весь элемент формы
     }
 
     // Сброс состояния полей контактов
     resetState() {
-        this.emailField.value = '';
-        this.phoneField.value = '';
+        this.emailField!.value = '';
+        this.phoneField!.value = '';
     }
 
     // Обрабатывает ошибки формы контактных данных

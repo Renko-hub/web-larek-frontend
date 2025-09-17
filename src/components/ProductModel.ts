@@ -7,10 +7,10 @@ export interface IProduct {
     title: string;
     category: string;
     image: string;
-    price: number | null; // Допускаем также null-значение
+    price: number | null;
     quantity?: number;
     description?: string;
-    displayText?: string; // Готовый текст для отображения цены
+    displayText: string; // Готовый текст для отображения цены
 }
 
 /**
@@ -29,13 +29,12 @@ export class ProductsModel {
             ...product,
             displayText: product.displayText ||
                          (typeof product.price === 'number' && product.price > 0 ?
-                          `${product.price} синапсов` :
-                          'Бесплатно'), // Если цена равна нулю или отсутствует, ставим "Бесплатно"
+                          `${product.price} синапсов` : 'Бесплатно'),
         }));
-        this.events.emit('products:show');
+        this.events.emit('products:show'); // Автоматически показываем товары после установки
     }
 
     get(): IProduct[] {
-        return this._products.slice();
+        return [...this._products];
     }
 }

@@ -5,30 +5,33 @@ import { IBasketItem } from './BasketModel';
 
 export class BasketItemView {
     private readonly basketTemplate: HTMLTemplateElement;
-    private readonly indexSelector: string = '.basket__item-index';
-    private readonly titleSelector: string = '.card__title';
-    private readonly priceSelector: string = '.card__price';
-    private readonly deleteButtonSelector: string = '.basket__item-delete';
+    private readonly events: any;
 
-    constructor() {
+    constructor(events: any) {
         this.basketTemplate = ensureElement('#card-basket') as HTMLTemplateElement;
+        this.events = events;
     }
 
     create(product: IBasketItem, onRemoveClick: (id: string) => void): HTMLElement {
         const itemClone = cloneTemplate(this.basketTemplate) as HTMLLIElement;
-        
-        // Используем заранее заданные селекторы для элементов
-        const indexSpan = ensureElement(this.indexSelector, itemClone);
-        indexSpan.textContent = String(product.index ?? '');
 
-        const titleEl = ensureElement(this.titleSelector, itemClone);
+        // Индексация товара
+        const indexEl = ensureElement('.basket__item-index', itemClone);
+        if (indexEl) indexEl.textContent = String(product.index ?? '');
+
+        // Название товара
+        const titleEl = ensureElement('.card__title', itemClone);
         if (titleEl) titleEl.textContent = product.title;
 
-        const priceEl = ensureElement(this.priceSelector, itemClone);
-        if (priceEl && product.displayText) priceEl.textContent = product.displayText;
+        // Цена товара
+        const priceEl = ensureElement('.card__price', itemClone);
+        if (priceEl) priceEl.textContent = product.displayText;
 
-        const delBtn = ensureElement(this.deleteButtonSelector, itemClone);
-        delBtn.addEventListener('click', () => onRemoveClick(product.id));
+        // Кнопка удаления товара
+        const delBtn = ensureElement('.basket__item-delete', itemClone);
+        if (delBtn) {
+            delBtn.addEventListener('click', () => onRemoveClick(product.id));
+        }
 
         return itemClone;
     }
