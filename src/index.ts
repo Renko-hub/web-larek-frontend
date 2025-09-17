@@ -26,37 +26,37 @@ const productModel = new ProductsModel(events);
 const basketModel = new BasketModel(events);
 const formModel = new FormModel(events);
 
-// Компоненты представлений
+// Представления компонентов
 const modal = Modal.getInstance('#modal-container');
 const cardView = CardView.getInstance(events, CDN_URL, colorsCategory);
 const basketView = BasketView.getInstance(events);
-const basketItemView = new BasketItemView(events); // Создаем экземпляр сразу здесь
 const orderView = OrderView.getInstance(events);
 const contactsView = ContactsView.getInstance(events);
 const successView = SuccessView.getInstance(events);
-const card = new Card(CDN_URL, events, colorsCategory);
 
 // Контроллер
 const pageController = new Page();
 
-// API клиент
+// API-клиент
 const api = new Api(API_URL);
 
 // Обработчики событий
 
-// Обработчик создания отдельной карточки продукта
+// Создание экземпляра карточки продукта
 events.on('create-product-card', (product: IProduct) => {
-    const cardElement = card.render(product); // Создаём элемент карточки продукта
-    pageController.addSingleProductToGallery(cardElement); // Используется для единичного добавления
+    const card = new Card(CDN_URL, events, colorsCategory); // Отдельный экземпляр для конкретной карточки
+    const cardElement = card.render(product); // Генерируем элемент карточки
+    pageController.addSingleProductToGallery(cardElement); // Добавляем её в галерею
 });
 
-// Обработчик показа всех продуктов
+// Показ всех продуктов
 events.on('products:show', () => {
     const products = productModel.get(); // Получаем список продуктов из модели
-    const renderedCards = products.map((product) =>
-        card.render(product) // Рендерим все карточки
-    );
-    pageController.updateProductsGallery(renderedCards); // Используем метод для полной перерисовки галереи
+    const renderedCards = products.map((product) => {
+        const card = new Card(CDN_URL, events, colorsCategory); // Экземпляр для каждой карточки
+        return card.render(product); // Рендерим каждую карточку отдельно
+    });
+    pageController.updateProductsGallery(renderedCards); // Перерисовываем всю галерею
 });
 
 // Открытие модального окна продукта
@@ -66,24 +66,30 @@ events.on('open-product-modal', (product: IProduct) => {
     modal.open();
 });
 
-// Обработчик установки элементов корзины
+// Установка элементов корзины
 events.on('set-basket-items', (items: HTMLElement[]) => {
-    basketView.setBasketItems(items); // Напрямую обновляем содержимое корзины через представление
+    basketView.setBasketItems(items); // Напрямую обновляем корзину
 });
 
-// Обработчик изменения корзины
+// Изменение корзины
 events.on('basket:change', () => {
-    const items = basketModel.items.map(product => basketItemView.create(product, basketModel.remove.bind(basketModel)));
-    basketView.setBasketItems(items); // Устанавливаем новые элементы корзины через представление
+    const items = basketModel.items.map(product => {
+        const basketItemView = new BasketItemView(events); // Новый экземпляр для каждого элемента корзины
+        return basketItemView.create(product, basketModel.remove.bind(basketModel));
+    });
+    basketView.setBasketItems(items); // Обновляем элементы корзины
     modal.content = basketView.render(items, basketModel.emptyMessage, basketModel.totalPrice);
     modal.open();
     basketView.updateBasketCounter(basketModel.totalItems);
 });
 
-// Обработчик открытия корзины
+// Открытие корзины
 events.on('open-basket', () => {
-    const items = basketModel.items.map(product => basketItemView.create(product, basketModel.remove.bind(basketModel)));
-    basketView.setBasketItems(items); // Передаём новый список элементов представлению корзины
+    const items = basketModel.items.map(product => {
+        const basketItemView = new BasketItemView(events); // Создаем отдельный экземпляр для каждого элемента
+        return basketItemView.create(product, basketModel.remove.bind(basketModel));
+    });
+    basketView.setBasketItems(items); // Передаем новый список элементов
     modal.content = basketView.render(items, basketModel.emptyMessage, basketModel.totalPrice);
     modal.open();
 });
