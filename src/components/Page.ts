@@ -1,9 +1,6 @@
 // Page.ts
 
-import { Card } from './Card';
-import { IProduct } from './ProductModel';
 import { ensureElement } from '../utils/utils';
-import { CDN_URL, colorsCategory } from '../utils/constants';
 
 export class Page {
     private readonly _events: any;
@@ -14,20 +11,17 @@ export class Page {
         this.galleryContainer = ensureElement('.gallery') as HTMLElement;
     }
 
-    addProductToGallery(cardElement: HTMLElement): void {
+    /**
+     * Метод для добавления карточки товара в галерею.
+     */
+    public addProductToGallery(cardElement: HTMLElement): void {
         this.galleryContainer.appendChild(cardElement);
     }
 
-    clearGallery(): void {
+    /**
+     * Очистка галереи перед добавлением новых карточек.
+     */
+    public clearGallery(): void {
         this.galleryContainer.innerHTML = '';
-    }
-
-    renderProducts(products: IProduct[]): void {
-        this.clearGallery();
-        const cards = products.map(product => {
-            const card = new Card(CDN_URL, this._events, colorsCategory);
-            return card.render(product);
-        });
-        cards.forEach(card => this.addProductToGallery(card));
     }
 }

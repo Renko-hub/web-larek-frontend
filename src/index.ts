@@ -34,6 +34,7 @@ const basketItemView = new BasketItemView(events); // Создаем экзем�
 const orderView = OrderView.getInstance(events);
 const contactsView = ContactsView.getInstance(events);
 const successView = SuccessView.getInstance(events);
+const card = new Card(CDN_URL, events, colorsCategory);
 
 // Контроллер
 const pageController = new Page(events);
@@ -45,23 +46,18 @@ const api = new Api(API_URL);
 
 // Обработчик создания карточки продукта
 events.on('create-product-card', (product: IProduct) => {
-    const card = new Card(CDN_URL, events, colorsCategory);
-    const cardElement = card.render(product); // Прямо создаём элемент карточки продукта
-    events.emit('add-product-to-gallery', cardElement);
-});
-
-// Теперь только тут вызываем метод контроллера страницы
-events.on('add-product-to-gallery', (cardElement: HTMLElement) => {
-    pageController.addProductToGallery(cardElement); // Здесь оставляем прямой вызов метода контроллера
+    const cardElement = card.render(product); // Создаём элемент карточки продукта
+    pageController.addProductToGallery(cardElement); // Добавляем карточку в галерею
 });
 
 // Обработчик показа всех продуктов
 events.on('products:show', () => {
     const products = productModel.get(); // Получаем список продуктов из модели
+    
+    // Проходим по списку продуктов и добавляем каждую карточку
     products.forEach((product) => {
-        const card = new Card(CDN_URL, events, colorsCategory);
-        const cardElement = card.render(product); // Рендерим каждую карточку отдельно
-        events.emit('add-product-to-gallery', cardElement);
+        const cardElement = card.render(product); // Рендерим карточку продукта
+        pageController.addProductToGallery(cardElement); // Добавляем карточку в галерею
     });
 });
 

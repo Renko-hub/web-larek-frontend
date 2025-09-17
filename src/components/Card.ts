@@ -39,8 +39,6 @@ export class Card {
         // Открытие модального окна при нажатии на карточку
         card.addEventListener('click', () => this._events.emit('open-product-modal', product));
 
-        this._events.emit('add-product-to-gallery', card);
-
         return card;
     }
 }
