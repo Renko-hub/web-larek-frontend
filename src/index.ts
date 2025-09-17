@@ -37,7 +37,7 @@ const successView = SuccessView.getInstance(events);
 const card = new Card(CDN_URL, events, colorsCategory);
 
 // Контроллер
-const pageController = new Page(events);
+const pageController = new Page();
 
 // API клиент
 const api = new Api(API_URL);

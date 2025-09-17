@@ -3,11 +3,9 @@
 import { ensureElement } from '../utils/utils';
 
 export class Page {
-    private readonly _events: any;
     private readonly galleryContainer: HTMLElement;
 
-    constructor(events: any) {
-        this._events = events;
+    constructor() {
         this.galleryContainer = ensureElement('.gallery') as HTMLElement;
     }
 
