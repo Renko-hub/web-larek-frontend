@@ -46,22 +46,20 @@ const api = new Api(API_URL);
 // Обработчик создания карточки продукта
 events.on('create-product-card', (product: IProduct) => {
     const card = new Card(CDN_URL, events, colorsCategory);
-    const cardElement = card.render(product); // Прямо создаём элемент карточки продукта
-    pageController.addProductToGallery(cardElement); // Непосредственно добавляем элемент в галерею через контроллер
+    const cardElement = card.render(product); // Рендерим элемент карточки продукта
+    pageController.addProductToGallery(cardElement); // Передаем созданный элемент контроллеру
 });
 
 // Обработчик добавления продукта в галерею
 events.on('add-product-to-gallery', (cardElement: HTMLElement) => {
-    pageController.addProductToGallery(cardElement); // Прямой вызов метода контроллера для добавления элемента
+    pageController.addProductToGallery(cardElement); // Контроллер добавляет элемент в галерею
 });
 
 // Обработчик показа всех продуктов
 events.on('products:show', () => {
     const products = productModel.get(); // Получаем список продуктов из модели
     products.forEach((product) => {
-        const card = new Card(CDN_URL, events, colorsCategory);
-        const cardElement = card.render(product); // Отдельно рендерим каждую карточку продукта
-        pageController.addProductToGallery(cardElement); // Добавляем карточку в галерею напрямую через контроллер
+        pageController.createAndAddProductCard(product); // Метод контроллера для создания и добавления карточки
     });
 });
 
