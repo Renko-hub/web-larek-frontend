@@ -5,19 +5,17 @@ import { IBasketItem } from './BasketModel';
 
 export class BasketItemView {
     private readonly basketTemplate: HTMLTemplateElement;
-    private readonly events: any;
 
-    constructor(events: any) {
+    constructor() {
         this.basketTemplate = ensureElement('#card-basket') as HTMLTemplateElement;
-        this.events = events;
     }
 
     create(product: IBasketItem, onRemoveClick: (id: string) => void): HTMLElement {
         const itemClone = cloneTemplate(this.basketTemplate) as HTMLLIElement;
 
-        // Индексация товара
+        // Индекс товара (если задан)
         const indexEl = ensureElement('.basket__item-index', itemClone);
-        if (indexEl) indexEl.textContent = String(product.index ?? '');
+        if (indexEl && typeof product.index === 'number') indexEl.textContent = String(product.index);
 
         // Название товара
         const titleEl = ensureElement('.card__title', itemClone);

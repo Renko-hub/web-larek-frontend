@@ -74,7 +74,7 @@ events.on('set-basket-items', (items: HTMLElement[]) => {
 // Изменение корзины
 events.on('basket:change', () => {
     const items = basketModel.items.map(product => {
-        const basketItemView = new BasketItemView(events); // Новый экземпляр для каждого элемента корзины
+        const basketItemView = new BasketItemView(); // Новый экземпляр для каждого элемента корзины
         return basketItemView.create(product, basketModel.remove.bind(basketModel));
     });
     basketView.setBasketItems(items); // Обновляем элементы корзины
@@ -86,7 +86,7 @@ events.on('basket:change', () => {
 // Открытие корзины
 events.on('open-basket', () => {
     const items = basketModel.items.map(product => {
-        const basketItemView = new BasketItemView(events); // Создаем отдельный экземпляр для каждого элемента
+        const basketItemView = new BasketItemView(); // Создаем отдельный экземпляр для каждого элемента
         return basketItemView.create(product, basketModel.remove.bind(basketModel));
     });
     basketView.setBasketItems(items); // Передаем новый список элементов

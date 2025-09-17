@@ -18,7 +18,7 @@ export class BasketView {
         this.basketList = ensureElement('.basket__list', this.basketCard);
         this.basketTotalPrice = ensureElement('.basket__price', this.basketCard);
         this.checkoutButton = ensureElement('.basket__button', this.basketCard) as HTMLButtonElement;
-        
+
         document.querySelector('.header__basket')?.addEventListener('click', () => this.events.emit('open-basket'));
         this.checkoutButton?.addEventListener('click', () => this.events.emit('open-order'));
     }
@@ -28,9 +28,9 @@ export class BasketView {
     }
 
     render(basketItems: HTMLElement[], emptyMessage: string, totalPrice: number): HTMLElement {
-        this.checkoutButton.disabled = !!emptyMessage.trim();
-        this.basketList && basketItems.length ? this.setBasketItems(basketItems) : undefined;
-        this.basketTotalPrice && (this.basketTotalPrice.textContent = emptyMessage || `${totalPrice} синапсов`);
+        this.checkoutButton.disabled = !!(emptyMessage.trim()); // Если сообщение не пустое, кнопка отключается
+        this.basketList && basketItems.length > 0 && this.setBasketItems(basketItems); // Если есть товары, устанавливаем элементы
+        this.basketTotalPrice && (this.basketTotalPrice.textContent = emptyMessage || `${totalPrice} синапсов`); // Отображаем итоговую цену или сообщение
         return this.basketCard;
     }
 
@@ -42,7 +42,7 @@ export class BasketView {
     setBasketItems(items: HTMLElement[]): void {
         const list = this.basketList;
         if (!list) return;
-        list.innerHTML = '';
-        items.forEach(item => list.appendChild(item));
+        list.innerHTML = ''; // Чистим список
+        items.forEach(item => list.appendChild(item)); // Заполняем новыми элементами
     }
 }
