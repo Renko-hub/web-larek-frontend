@@ -30,13 +30,13 @@ const formModel = new FormModel(events);
 const modal = Modal.getInstance('#modal-container');
 const cardView = CardView.getInstance(events, CDN_URL, colorsCategory);
 const basketView = BasketView.getInstance(events);
-const basketItemView = new BasketItemView(events); // создаем экземпляр сразу здесь
+const basketItemView = new BasketItemView(events); // Создаем экземпляр сразу здесь
 const orderView = OrderView.getInstance(events);
 const contactsView = ContactsView.getInstance(events);
 const successView = SuccessView.getInstance(events);
 
 // Контроллер
-const pageController = new Page(events, CDN_URL, colorsCategory);
+const pageController = new Page(events);
 
 // API клиент
 const api = new Api(API_URL);
@@ -46,20 +46,22 @@ const api = new Api(API_URL);
 // Обработчик создания карточки продукта
 events.on('create-product-card', (product: IProduct) => {
     const card = new Card(CDN_URL, events, colorsCategory);
-    const cardElement = card.render(product); // Рендерим элемент карточки продукта
-    pageController.addProductToGallery(cardElement); // Передаем созданный элемент контроллеру
+    const cardElement = card.render(product); // Прямо создаём элемент карточки продукта
+    events.emit('add-product-to-gallery', cardElement);
 });
 
-// Обработчик добавления продукта в галерею
+// Теперь только тут вызываем метод контроллера страницы
 events.on('add-product-to-gallery', (cardElement: HTMLElement) => {
-    pageController.addProductToGallery(cardElement); // Контроллер добавляет элемент в галерею
+    pageController.addProductToGallery(cardElement); // Здесь оставляем прямой вызов метода контроллера
 });
 
 // Обработчик показа всех продуктов
 events.on('products:show', () => {
     const products = productModel.get(); // Получаем список продуктов из модели
     products.forEach((product) => {
-        pageController.createAndAddProductCard(product); // Метод контроллера для создания и добавления карточки
+        const card = new Card(CDN_URL, events, colorsCategory);
+        const cardElement = card.render(product); // Рендерим каждую карточку отдельно
+        events.emit('add-product-to-gallery', cardElement);
     });
 });
 
@@ -91,7 +93,6 @@ events.on('open-basket', () => {
     modal.content = basketView.render(items, basketModel.emptyMessage, basketModel.totalPrice);
     modal.open();
 });
-
 
 // Открытие страницы оформления заказа
 events.on('open-order', () => {

@@ -17,7 +17,7 @@ export class Card {
     render(product: IProduct): HTMLElement {
         const template = ensureElement('#card-catalog') as HTMLTemplateElement;
         const card = cloneTemplate(template);
-
+        
         // Категория товара
         const categoryEl = ensureElement('.card__category', card);
         if (categoryEl && product.category) {
@@ -38,6 +38,8 @@ export class Card {
 
         // Открытие модального окна при нажатии на карточку
         card.addEventListener('click', () => this._events.emit('open-product-modal', product));
+
+        this._events.emit('add-product-to-gallery', card);
 
         return card;
     }
