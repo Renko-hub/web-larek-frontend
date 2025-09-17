@@ -44,21 +44,19 @@ const api = new Api(API_URL);
 
 // Обработчики событий
 
-// Обработчик создания карточки продукта
+// Обработчик создания отдельной карточки продукта
 events.on('create-product-card', (product: IProduct) => {
     const cardElement = card.render(product); // Создаём элемент карточки продукта
-    pageController.addProductToGallery(cardElement); // Добавляем карточку в галерею
+    pageController.addSingleProductToGallery(cardElement); // Используется для единичного добавления
 });
 
 // Обработчик показа всех продуктов
 events.on('products:show', () => {
     const products = productModel.get(); // Получаем список продуктов из модели
-    
-    // Проходим по списку продуктов и добавляем каждую карточку
-    products.forEach((product) => {
-        const cardElement = card.render(product); // Рендерим карточку продукта
-        pageController.addProductToGallery(cardElement); // Добавляем карточку в галерею
-    });
+    const renderedCards = products.map((product) =>
+        card.render(product) // Рендерим все карточки
+    );
+    pageController.updateProductsGallery(renderedCards); // Используем метод для полной перерисовки галереи
 });
 
 // Открытие модального окна продукта

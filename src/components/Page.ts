@@ -10,10 +10,18 @@ export class Page {
     }
 
     /**
-     * Метод для добавления карточки товара в галерею.
+     * Метод для добавления единственной карточки товара в галерею.
      */
-    public addProductToGallery(cardElement: HTMLElement): void {
+    public addSingleProductToGallery(cardElement: HTMLElement): void {
         this.galleryContainer.appendChild(cardElement);
+    }
+
+    /**
+     * Метод для обновления всей галереи продуктов (очистка + добавление всех карточек заново)
+     */
+    public updateProductsGallery(cardsElements: HTMLElement[]): void {
+        this.clearGallery();
+        cardsElements.forEach((element) => this.galleryContainer.appendChild(element));
     }
 
     /**
